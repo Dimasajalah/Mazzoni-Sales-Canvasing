@@ -1,0 +1,16 @@
+{
+  "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "name": "Epicor Kinetic (placeholder)",
+  "values": [
+    { "key": "baseUrl", "value": "https://YOUR-EPICOR-HOST/ERP10", "type": "default", "enabled": true },
+    { "key": "company", "value": "YOUR_COMPANY", "type": "default", "enabled": true },
+    { "key": "username", "value": "", "type": "secret", "enabled": true },
+    { "key": "password", "value": "", "type": "secret", "enabled": true },
+    { "key": "apiKey", "value": "", "type": "secret", "enabled": true },
+    { "key": "baqOnHand", "value": "YOUR_BAQ_ONHAND_NAME", "type": "default", "enabled": true },
+    { "key": "sampleCustID", "value": "", "type": "default", "enabled": true },
+    { "key": "samplePartNum", "value": "STM-1000", "type": "default", "enabled": true },
+    { "key": "bearerToken", "value": "", "type": "secret", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment"
+}

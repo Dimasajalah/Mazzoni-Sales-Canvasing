@@ -1,0 +1,218 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Epicor Kinetic — Smoke Test (Sales Canvassing BMT)",
+    "description": "Read-only smoke tests ke Epicor REST/OData v2 sebelum integrasi ke Sales Canvassing.\n\nIsi environment: baseUrl, company, username, password.\nPath default mengikuti pola Kinetic/ERP REST v2 — sesuaikan jika IT memberi URL berbeda.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{username}}", "type": "string" },
+      { "key": "password", "value": "{{password}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://YOUR-EPICOR-HOST/ERP10" },
+    { "key": "company", "value": "YOUR_COMPANY" },
+    { "key": "sampleCustID", "value": "" },
+    { "key": "samplePartNum", "value": "STM-1000" }
+  ],
+  "item": [
+    {
+      "name": "01 — Connectivity",
+      "item": [
+        {
+          "name": "GET Companies (ping auth)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "X-API-Key", "value": "{{apiKey}}", "disabled": true }
+            ],
+            "url": "{{baseUrl}}/api/v2/odata/{{company}}/Erp.BO.CompanySvc/Companies?$top=1",
+            "description": "Smoke auth + company. Ganti path jika IT memakai endpoint health lain."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Body JSON', function () { pm.response.to.be.json; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Token (opsional — jika pakai Bearer)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/TokenResource.svc/",
+            "description": "Hanya jika IT memakai token endpoint. Sesuaikan body/URL. Simpan token ke environment secara manual."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 — Customer (→ epicor_customer_num)",
+      "item": [
+        {
+          "name": "GET Customers top 10",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v2/odata/{{company}}/Erp.BO.CustomerSvc/Customers?$top=10&$select=CustNum,CustID,Name,Address1,City,CreditLimit"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const j = pm.response.json();",
+                  "const row = (j.value && j.value[0]) || null;",
+                  "if (row && row.CustID) { pm.collectionVariables.set('sampleCustID', String(row.CustID)); }",
+                  "pm.test('Ada minimal 1 customer', function () { pm.expect(j.value && j.value.length).to.be.above(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Customer by CustID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v2/odata/{{company}}/Erp.BO.CustomerSvc/Customers?$filter=CustID eq '{{sampleCustID}}'&$top=1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Part / Product (→ epicor_part_num)",
+      "item": [
+        {
+          "name": "GET Parts top 10",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v2/odata/{{company}}/Erp.BO.PartSvc/Parts?$top=10&$select=PartNum,PartDescription,IUM,ClassID"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const j = pm.response.json();",
+                  "const row = (j.value && j.value[0]) || null;",
+                  "if (row && row.PartNum) { pm.collectionVariables.set('samplePartNum', String(row.PartNum)); }",
+                  "pm.test('Ada minimal 1 part', function () { pm.expect(j.value && j.value.length).to.be.above(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Part by PartNum",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v2/odata/{{company}}/Erp.BO.PartSvc/Parts?$filter=PartNum eq '{{samplePartNum}}'&$top=1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 — Inventory / On Hand",
+      "item": [
+        {
+          "name": "GET PartWarehouses (sample part)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v2/odata/{{company}}/Erp.BO.PartSvc/PartWhses?$filter=PartNum eq '{{samplePartNum}}'&$top=20",
+            "description": "Field qty bisa berbeda per versi (OnHandQty, dll). Jika 404, minta BAQ on-hand ke IT."
+          }
+        },
+        {
+          "name": "GET BAQ OnHand (placeholder)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v2/odata/{{company}}/BaqSvc/{{baqOnHand}}/Data?$top=20",
+            "description": "Ganti {{baqOnHand}} dengan nama BAQ yang IT berikan."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 — Sales Order (read-only)",
+      "item": [
+        {
+          "name": "GET SalesOrders top 5",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v2/odata/{{company}}/Erp.BO.SalesOrderSvc/SalesOrders?$top=5&$select=OrderNum,CustNum,OrderDate,OpenOrder"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 — AR Invoice (read-only)",
+      "item": [
+        {
+          "name": "GET ARInvoices top 5",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v2/odata/{{company}}/Erp.BO.ARInvoiceSvc/ARInvoices?$top=5&$select=InvoiceNum,CustNum,InvoiceDate,InvoiceAmt,InvoiceBal"
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 — Shipment / Pack (opsional)",
+      "item": [
+        {
+          "name": "GET CustShipments top 5",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v2/odata/{{company}}/Erp.BO.CustShipSvc/CustShips?$top=5&$select=PackNum,OrderNum,ShipDate,CustNum",
+            "description": "Jika BO name beda di environment Anda, minta path exact ke IT."
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 — RMA (opsional)",
+      "item": [
+        {
+          "name": "GET RMAs top 5",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v2/odata/{{company}}/Erp.BO.RMAProcSvc/RMAs?$top=5",
+            "description": "Service RMA bisa berbeda nama BO — sesuaikan dengan dokumentasi IT."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+# Root
+.env
+.env.local
+.DS_Store
+Thumbs.db
+*.log
+
+# Backend
+backend/vendor/
+backend/node_modules/
+backend/storage/*.key
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/bootstrap/cache/*
+!backend/storage/logs/.gitignore
+!backend/storage/framework/**/.gitignore
+backend/.env
+backend/database/database.sqlite
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# Tools / IDE
+.idea/
+.vscode/
+*.swp
+
+# Jangan commit folder backup lokal (backup di luar repo / sibling)
+backups/
+*.backup/
