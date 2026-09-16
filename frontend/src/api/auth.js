@@ -1,3 +1,4 @@
+// frontend/src/api/auth.js
 import { apiGet, apiPost, clearAuth, setStoredUser, setToken } from './client'
 
 export async function login(login, password) {

@@ -1,3 +1,4 @@
+// frontend/src/api/client.js
 const TOKEN_KEY = 'sc_token'
 const USER_KEY = 'sc_user'
 
@@ -27,6 +28,7 @@ export function setStoredUser(user) {
 export function clearAuth() {
   setToken(null)
   setStoredUser(null)
+  window.dispatchEvent(new Event('auth:cleared'))
 }
 
 const API_BASE = (import.meta.env.VITE_API_URL || '/api/v1').replace(/\/$/, '')

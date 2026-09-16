@@ -1,3 +1,4 @@
+// frontend/src/hooks/useDraftSync.js
 import { useEffect, useRef } from 'react'
 import { createExpense, createLead, createOrder, createReturn } from '../api'
 import { loadDrafts, removeDraft } from '../lib/drafts'

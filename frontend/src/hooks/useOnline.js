@@ -1,3 +1,4 @@
+// frontend/src/hooks/useOnline.js
 import { useEffect, useState } from 'react'
 
 export function useOnline() {

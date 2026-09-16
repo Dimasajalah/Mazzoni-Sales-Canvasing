@@ -1,3 +1,4 @@
+// frontend/src/context/AuthContext.jsx
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import * as authApi from '../api/auth'
 import { getStoredUser, getToken, clearAuth } from '../api/client'
@@ -33,6 +34,15 @@ export function AuthProvider({ children }) {
     return () => {
       alive = false
     }
+  }, [])
+
+  useEffect(() => {
+    function handleAuthCleared() {
+      setUser(null)
+      setTok(null)
+    }
+    window.addEventListener('auth:cleared', handleAuthCleared)
+    return () => window.removeEventListener('auth:cleared', handleAuthCleared)
   }, [])
 
   const login = useCallback(async (loginId, password) => {

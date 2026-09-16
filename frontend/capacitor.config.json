@@ -1,0 +1,8 @@
+{
+  "appId": "com.mazzoni.salescanvassing",
+  "appName": "Mazzoni Sales Canvassing",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http"
+  }
+}

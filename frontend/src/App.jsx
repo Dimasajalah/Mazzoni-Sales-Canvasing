@@ -1,3 +1,4 @@
+// frontend/src/App.jsx
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { UiProvider } from './context/UiContext'
