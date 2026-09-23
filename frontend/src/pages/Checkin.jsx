@@ -1,6 +1,8 @@
+//frontend/src/pages/Checkin.jsx
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { checkinVisit, getCustomers } from '../api'
+import CheckinMap from '../components/CheckinMap'
 import { Screen, TopBar } from '../components/ui'
 import { useUi } from '../context/UiContext'
 import { useGeolocation } from '../hooks/useGeolocation'
@@ -26,7 +28,7 @@ export default function Checkin() {
         if (loc.state?.customerId) setCustomerId(String(loc.state.customerId))
       })
       .catch((e) => showToast(e.message, { warn: true }))
-    refresh().catch(() => {})
+    refresh().catch(() => { })
   }, [refresh, showToast, loc.state?.customerId])
 
   const customer = useMemo(
@@ -94,7 +96,12 @@ export default function Checkin() {
       </div>
       <div className="map">
         <div className="gps">{gpsLoading ? 'GPS…' : coords ? 'GPS aktif' : 'GPS off'}</div>
-        <div className="pin">📍</div>
+        <CheckinMap
+          userCoords={coords}
+          customerCoords={
+            customer?.latitude ? { lat: Number(customer.latitude), lng: Number(customer.longitude) } : null
+          }
+        />
         <div className="coord">
           {coords ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : 'Menunggu GPS…'}
         </div>

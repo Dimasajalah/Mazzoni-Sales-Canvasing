@@ -1,3 +1,4 @@
+//frontend/src/pages/VisitMode.jsx
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { checkoutVisit } from '../api'
@@ -9,6 +10,7 @@ const RESULTS = [
   'Pesanan didapat',
   'Penawaran diberikan',
   'Follow-up dijadwalkan',
+  'Tidak ada order',
   'Tidak bertemu',
   'Toko tutup',
 ]

@@ -1,7 +1,9 @@
 <?php
+// backend/app/Providers/Data/Staging/StagingSalesOrderProvider.php
 
 namespace App\Providers\Data\Staging;
 
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderLine;
@@ -55,15 +57,38 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
             $normalized = [];
 
             foreach ($lines as $line) {
-                $product = Product::findOrFail($line['product_id']);
+                $isCustom = (bool) ($line['is_custom'] ?? false);
                 $qty = (float) $line['qty'];
-                $unitPrice = isset($line['unit_price']) ? (float) $line['unit_price'] : (float) $product->price;
                 $discount = (float) ($line['discount'] ?? 0);
+
+                if ($isCustom) {
+                    $unitPrice = (float) ($line['unit_price'] ?? 0);
+                    $lineTotal = max(0, ($qty * $unitPrice) - $discount);
+                    $subtotal += $lineTotal;
+
+                    $normalized[] = [
+                        'product_id' => null,
+                        'is_custom' => true,
+                        'custom_part_name' => $line['custom_part_name'],
+                        'qty' => $qty,
+                        'uom' => $line['uom'] ?? 'PCS',
+                        'unit_price' => $unitPrice,
+                        'discount' => $discount,
+                        'line_total' => $lineTotal,
+                    ];
+
+                    continue;
+                }
+
+                $product = Product::findOrFail($line['product_id']);
+                $unitPrice = isset($line['unit_price']) ? (float) $line['unit_price'] : (float) $product->price;
                 $lineTotal = max(0, ($qty * $unitPrice) - $discount);
                 $subtotal += $lineTotal;
 
                 $normalized[] = [
                     'product_id' => $product->id,
+                    'is_custom' => false,
+                    'custom_part_name' => null,
                     'qty' => $qty,
                     'uom' => $line['uom'] ?? $product->uom,
                     'unit_price' => $unitPrice,
@@ -75,13 +100,22 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
             $discount = (float) ($header['discount'] ?? 0);
             $total = max(0, $subtotal - $discount);
 
+            // Cek status Credit Hold customer — kalau hold, order otomatis berstatus HOLD
+            // terlepas dari status yang diminta caller, supaya tidak bisa diloloskan diam-diam.
+            $customer = Customer::find($header['customer_id']);
+            $customerOnHold = (bool) ($customer?->credit_hold ?? false);
+            $status = $customerOnHold ? 'HOLD' : ($header['status'] ?? 'CONFIRMED');
+
             $order = SalesOrder::create([
                 ...$header,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'total' => $total,
-                'status' => $header['status'] ?? 'CONFIRMED',
+                'status' => $status,
                 'sync_status' => $header['sync_status'] ?? 'NOT_REQUIRED',
+                'notes' => $customerOnHold
+                    ? trim(($header['notes'] ?? '')."\n[SYSTEM] Order otomatis di-hold: customer dalam status Credit Hold.")
+                    : ($header['notes'] ?? null),
             ]);
 
             foreach ($normalized as $line) {
@@ -89,6 +123,10 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
                     'order_id' => $order->id,
                     ...$line,
                 ]);
+            }
+
+            if (! empty($header['lead_id'])) {
+                \App\Models\Lead::where('id', $header['lead_id'])->update(['stage' => 'WON']);
             }
 
             return $order->load(['customer', 'salesperson', 'lines.product']);

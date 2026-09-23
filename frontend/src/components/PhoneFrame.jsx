@@ -1,3 +1,4 @@
+//frontend/src/components/PhoneFrame.jsx
 import { useEffect, useState } from 'react'
 import { useOnline } from '../hooks/useOnline'
 import { useUi } from '../context/UiContext'

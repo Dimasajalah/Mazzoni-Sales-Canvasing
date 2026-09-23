@@ -1,3 +1,4 @@
+//frontend/src/context/UiContext.jsx
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 
 const UiContext = createContext(null)

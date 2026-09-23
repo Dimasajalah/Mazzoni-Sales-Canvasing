@@ -1,9 +1,16 @@
+//frontend/src/pages/Orders.jsx
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getOrders } from '../api'
 import { ListItem, Screen } from '../components/ui'
 import { useUi } from '../context/UiContext'
 import { fmtRp, listOf } from '../lib/format'
+
+function statusColor(status) {
+  if (status === 'HOLD') return '#d32f2f'
+  if (status === 'CONFIRMED') return 'var(--orange)'
+  return '#999'
+}
 
 export default function Orders() {
   const [items, setItems] = useState([])
@@ -23,9 +30,9 @@ export default function Orders() {
       {items.map((o) => (
         <ListItem
           key={o.id || o.order_number}
-          barColor="var(--orange)"
+          barColor={statusColor(o.status)}
           title={o.order_number || o.so}
-          subtitle={`${o.customer?.name || o.customer_name || o.cust} · ${o.status || o.st || '—'}`}
+          subtitle={`${o.customer?.name || o.customer_name || o.cust} · ${o.status === 'HOLD' ? '⚠ HOLD' : (o.status || o.st || '—')}`}
           right={o.total != null ? fmtRp(o.total) : o.d}
           onClick={() => nav('/track', { state: { orderId: o.id } })}
         />

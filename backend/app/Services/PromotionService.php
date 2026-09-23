@@ -1,5 +1,5 @@
 <?php
-
+//backend/app/Services/PromotionService.php
 namespace App\Services;
 
 use App\Models\PromoOfferHistory;
@@ -48,5 +48,13 @@ class PromotionService
             'visit_id' => $data['visit_id'] ?? null,
             'offered_at' => $data['offered_at'] ?? now(),
         ]);
+    }
+
+    public function historyForCustomer(int $customerId)
+    {
+        return \App\Models\PromoOfferHistory::with(['promo', 'salesperson'])
+            ->where('customer_id', $customerId)
+            ->latest('offered_at')
+            ->get();
     }
 }

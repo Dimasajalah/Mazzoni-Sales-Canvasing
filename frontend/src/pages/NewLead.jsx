@@ -1,3 +1,4 @@
+// frontend/src/pages/NewLead.jsx
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createLead } from '../api'
@@ -7,6 +8,7 @@ import { useUi } from '../context/UiContext'
 import { useGeolocation } from '../hooks/useGeolocation'
 import { useOnline } from '../hooks/useOnline'
 import { saveDraft } from '../lib/drafts'
+import LocationPicker from '../components/LocationPicker'
 import { uuid } from '../lib/uuid'
 
 export default function NewLead() {
@@ -16,6 +18,7 @@ export default function NewLead() {
   const { showToast } = useUi()
   const nav = useNavigate()
   const [saving, setSaving] = useState(false)
+  const [mapPosition, setMapPosition] = useState(null)
   const [form, setForm] = useState({
     business_name: '',
     owner_name: '',
@@ -24,21 +27,30 @@ export default function NewLead() {
     email: '',
     business_type: 'Distributor Retail',
     npwp: '',
+    ktp: '',
+    scoring: '',
   })
 
   useEffect(() => {
-    refresh().catch(() => {})
+    refresh().catch(() => { })
   }, [refresh])
+
+  useEffect(() => {
+    if (coords && !mapPosition) {
+      setMapPosition({ lat: coords.lat, lng: coords.lng })
+    }
+  }, [coords, mapPosition])
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
   const submit = async (e) => {
     e.preventDefault()
     const client_uuid = uuid()
+    const finalcoords = mapPosition || coords
     const payload = {
       ...form,
-      latitude: coords?.lat ?? null,
-      longitude: coords?.lng ?? null,
+      latitude: finalcoords?.lat ?? null,
+      longitude: finalcoords?.lng ?? null,
       client_uuid,
       register_date: new Date().toISOString().slice(0, 10),
     }
@@ -97,16 +109,29 @@ export default function NewLead() {
           </select>
         </div>
         <div className="field">
+          <label>Scoring Lead</label>
+          <select value={form.scoring} onChange={set('scoring')}>
+            <option value="">— Belum dinilai —</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+          </select>
+        </div>
+        <div className="field">
+          <label>KTP</label>
+          <input required value={form.ktp} onChange={set('ktp')} />
+        </div>
+        <div className="field">
           <label>NPWP</label>
           <input value={form.npwp} onChange={set('npwp')} />
         </div>
 
         <div className="map">
           <div className="gps">GPS {coords ? 'OK' : gpsError ? 'Gagal' : '…'}</div>
-          <div className="pin">📍</div>
+          <LocationPicker value={mapPosition} onChange={setMapPosition} />
           <div className="coord">
-            {coords
-              ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
+            {mapPosition
+              ? `${mapPosition.lat.toFixed(5)}, ${mapPosition.lng.toFixed(5)}`
               : 'Menunggu koordinat…'}
           </div>
         </div>

@@ -1,5 +1,5 @@
 <?php
-
+//backend/app/Models/Lead.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Lead extends Model
 {
     protected $fillable = [
-        'business_name', 'owner_name', 'address', 'phone', 'email', 'business_type', 'npwp',
+        'business_name', 'owner_name', 'address', 'phone', 'email', 'business_type', 'npwp', 'ktp', 'scoring',
         'latitude', 'longitude', 'salesperson_id', 'stage', 'estimated_value', 'register_date', 'client_uuid',
     ];
 

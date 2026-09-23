@@ -1,5 +1,5 @@
 <?php
-
+//backend/app/Models/SalesOrder.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class SalesOrder extends Model
 {
     protected $fillable = [
-        'order_number', 'customer_id', 'customer_po', 'salesperson_id', 'order_date',
+        'order_number', 'customer_id', 'lead_id', 'customer_po', 'salesperson_id', 'order_date',
         'subtotal', 'discount', 'total', 'status', 'sync_status', 'epicor_order_num',
         'client_uuid', 'promo_id', 'notes',
     ];
@@ -27,6 +27,11 @@ class SalesOrder extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function lead(): BelongsTo
+    {
+        return $this->belongsTo(Lead::class);
     }
 
     public function salesperson(): BelongsTo

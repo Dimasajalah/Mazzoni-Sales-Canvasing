@@ -1,5 +1,6 @@
+//frontend/src/pages/Promo.jsx
 import { useEffect, useState } from 'react'
-import { getCustomers, getPromos, offerPromo } from '../api'
+import { getCustomers, getCustomerPromoHistory, getPromos, offerPromo } from '../api'
 import { Card, Chips, Screen } from '../components/ui'
 import { useUi } from '../context/UiContext'
 import { listOf } from '../lib/format'
@@ -76,6 +77,15 @@ export default function Promo() {
 
 function OfferForm({ customers, onSubmit }) {
   const [id, setId] = useState(customers[0]?.id || '')
+  const [history, setHistory] = useState([])
+
+  useEffect(() => {
+    if (!id) return
+    getCustomerPromoHistory(id)
+      .then((res) => setHistory(Array.isArray(res) ? res : res?.data || []))
+      .catch(() => setHistory([]))
+  }, [id])
+
   return (
     <div>
       <div className="field">
@@ -88,6 +98,18 @@ function OfferForm({ customers, onSubmit }) {
           ))}
         </select>
       </div>
+
+      {history.length > 0 && (
+        <div className="muted" style={{ fontSize: 12, marginBottom: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>Riwayat promo ke customer ini:</div>
+          {history.map((h) => (
+            <div key={h.id}>
+              • {h.promo?.name || h.promo?.promo_code} — {new Date(h.offered_at).toLocaleDateString('id-ID')}
+            </div>
+          ))}
+        </div>
+      )}
+
       <button type="button" className="btn" disabled={!id} onClick={() => onSubmit(id)}>
         Kirim Offer
       </button>

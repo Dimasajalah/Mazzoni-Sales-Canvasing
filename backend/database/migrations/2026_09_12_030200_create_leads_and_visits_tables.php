@@ -1,5 +1,5 @@
 <?php
-
+//backend/database/migrations/2026_09_12_030200_create_leads_and_visits_tables.php
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

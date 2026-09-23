@@ -33,3 +33,5 @@ frontend/.env.local
 # Jangan commit folder backup lokal (backup di luar repo / sibling)
 backups/
 *.backup/
+
+frontend/.env.mobile

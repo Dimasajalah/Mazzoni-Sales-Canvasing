@@ -1,5 +1,5 @@
 <?php
-
+//backend/app/Http/Controllers/Api/V1/PromotionController.php
 namespace App\Http\Controllers\Api\V1;
 
 use App\Helpers\ApiResponse;
@@ -44,6 +44,13 @@ class PromotionController extends Controller
             $this->promotionService->recordOffer($data, $request->user()),
             'Penawaran promo dicatat',
             201
+        );
+    }
+
+    public function customerHistory(int $customerId): JsonResponse
+    {
+        return ApiResponse::success(
+            $this->promotionService->historyForCustomer($customerId)
         );
     }
 }

@@ -1,5 +1,5 @@
 <?php
-
+// backend/app/Models/User.php
 namespace App\Models;
 
 use Database\Factories\UserFactory;

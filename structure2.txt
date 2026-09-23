@@ -1,0 +1,339 @@
+Folder PATH listing for volume Acer
+Volume serial number is 88C3-FD64
+C:.
+|   .gitignore
+|   CHANGELOG.md
+|   README.md
+|   structure.txt
+|   VERSION
+|   
++---backend
+|   |   .editorconfig
+|   |   .env
+|   |   .env.example
+|   |   .gitattributes
+|   |   .gitignore
+|   |   .npmrc
+|   |   .phpunit.result.cache
+|   |   AGENTS.md
+|   |   artisan
+|   |   CLAUDE.md
+|   |   composer.json
+|   |   composer.lock
+|   |   package.json
+|   |   phpunit.xml
+|   |   README.md
+|   |   vite.config.js
+|   |   
+|   +---app
+|   |   +---Contracts
+|   |   |       ARDataProviderInterface.php
+|   |   |       CustomerDataProviderInterface.php
+|   |   |       InventoryDataProviderInterface.php
+|   |   |       PaymentProviderInterface.php
+|   |   |       SalesOrderProviderInterface.php
+|   |   |       
+|   |   +---Helpers
+|   |   |       ApiResponse.php
+|   |   |       
+|   |   +---Http
+|   |   |   \---Controllers
+|   |   |       |   Controller.php
+|   |   |       |   
+|   |   |       \---Api
+|   |   |           |   HealthController.php
+|   |   |           |   
+|   |   |           \---V1
+|   |   |                   ARController.php
+|   |   |                   AuthController.php
+|   |   |                   CustomerController.php
+|   |   |                   DashboardController.php
+|   |   |                   ExpenseController.php
+|   |   |                   InventoryController.php
+|   |   |                   LeadController.php
+|   |   |                   PromotionController.php
+|   |   |                   ReturnController.php
+|   |   |                   SalesOrderController.php
+|   |   |                   SearchController.php
+|   |   |                   VisitController.php
+|   |   |                   
+|   |   +---Models
+|   |   |       AuditLog.php
+|   |   |       Customer.php
+|   |   |       Expense.php
+|   |   |       ExpenseAttachment.php
+|   |   |       ExpenseStatusHistory.php
+|   |   |       IntegrationLog.php
+|   |   |       Inventory.php
+|   |   |       Invoice.php
+|   |   |       InvoiceLine.php
+|   |   |       Lead.php
+|   |   |       LeadActivity.php
+|   |   |       LeadFollowup.php
+|   |   |       Notification.php
+|   |   |       Payment.php
+|   |   |       Product.php
+|   |   |       PromoOfferHistory.php
+|   |   |       Promotion.php
+|   |   |       ReturnAttachment.php
+|   |   |       ReturnRequest.php
+|   |   |       ReturnRequestLine.php
+|   |   |       ReturnStatusHistory.php
+|   |   |       SalesOrder.php
+|   |   |       SalesOrderLine.php
+|   |   |       Shipment.php
+|   |   |       ShipmentLine.php
+|   |   |       Territory.php
+|   |   |       User.php
+|   |   |       Visit.php
+|   |   |       VisitActivity.php
+|   |   |       
+|   |   +---Providers
+|   |   |   |   AppServiceProvider.php
+|   |   |   |   
+|   |   |   \---Data
+|   |   |       |   StagingARProvider.php
+|   |   |       |   StagingCustomerProvider.php
+|   |   |       |   StagingInventoryProvider.php
+|   |   |       |   StagingPaymentProvider.php
+|   |   |       |   StagingSalesOrderProvider.php
+|   |   |       |   
+|   |   |       +---Contracts
+|   |   |       |       ARDataProviderInterface.php
+|   |   |       |       CustomerDataProviderInterface.php
+|   |   |       |       InventoryDataProviderInterface.php
+|   |   |       |       PaymentProviderInterface.php
+|   |   |       |       SalesOrderProviderInterface.php
+|   |   |       |       
+|   |   |       \---Staging
+|   |   |               StagingARProvider.php
+|   |   |               StagingCustomerProvider.php
+|   |   |               StagingInventoryProvider.php
+|   |   |               StagingPaymentProvider.php
+|   |   |               StagingSalesOrderProvider.php
+|   |   |               
+|   |   +---Services
+|   |   |       ARService.php
+|   |   |       AuditLogService.php
+|   |   |       AuthService.php
+|   |   |       CustomerService.php
+|   |   |       DashboardService.php
+|   |   |       ExpenseService.php
+|   |   |       InventoryService.php
+|   |   |       LeadService.php
+|   |   |       PaymentService.php
+|   |   |       ProductService.php
+|   |   |       PromotionService.php
+|   |   |       ReturnService.php
+|   |   |       SalesOrderService.php
+|   |   |       SearchService.php
+|   |   |       VisitService.php
+|   |   |       
+|   |   \---Support
+|   |           ApiResponse.php
+|   |           GeoHelper.php
+|   |           NumberGenerator.php
+|   |           
+|   +---bootstrap
+|   |   |   app.php
+|   |   |   providers.php
+|   |   |   
+|   |   \---cache
+|   |           .gitignore
+|   |           packages.php
+|   |           services.php
+|   |           
+|   +---config
+|   |       app.php
+|   |       auth.php
+|   |       cache.php
+|   |       canvassing.php
+|   |       cors.php
+|   |       database.php
+|   |       filesystems.php
+|   |       logging.php
+|   |       mail.php
+|   |       queue.php
+|   |       sales.php
+|   |       sanctum.php
+|   |       services.php
+|   |       session.php
+|   |       
+|   +---database
+|   |   |   .gitignore
+|   |   |   database.sqlite
+|   |   |   
+|   |   +---factories
+|   |   |       UserFactory.php
+|   |   |       
+|   |   +---migrations
+|   |   |       0001_01_01_000000_create_users_table.php
+|   |   |       0001_01_01_000001_create_cache_table.php
+|   |   |       0001_01_01_000002_create_jobs_table.php
+|   |   |       2026_09_12_022949_create_personal_access_tokens_table.php
+|   |   |       2026_09_12_030000_create_territories_and_customers_tables.php
+|   |   |       2026_09_12_030100_create_products_and_inventories_tables.php
+|   |   |       2026_09_12_030200_create_leads_and_visits_tables.php
+|   |   |       2026_09_12_030300_create_promotions_tables.php
+|   |   |       2026_09_12_030400_create_sales_orders_and_shipments_tables.php
+|   |   |       2026_09_12_030500_create_invoices_and_payments_tables.php
+|   |   |       2026_09_12_030600_create_expenses_and_returns_tables.php
+|   |   |       2026_09_12_030700_create_notifications_audit_integration_tables.php
+|   |   |       
+|   |   \---seeders
+|   |           DatabaseSeeder.php
+|   |           
+|   +---public
+|   |   |   .htaccess
+|   |   |   favicon.ico
+|   |   |   index.php
+|   |   |   robots.txt
+|   |   |   
+|   |   \---storage
+|   |           .gitignore
+|   |           
+|   +---resources
+|   |   +---css
+|   |   |       app.css
+|   |   |       
+|   |   +---js
+|   |   |       app.js
+|   |   |       
+|   |   \---views
+|   |           welcome.blade.php
+|   |           
+|   +---routes
+|   |       api.php
+|   |       console.php
+|   |       web.php
+|   |       
+|   +---storage
+|   |   +---app
+|   |   |   |   .gitignore
+|   |   |   |   
+|   |   |   +---private
+|   |   |   |       .gitignore
+|   |   |   |       
+|   |   |   \---public
+|   |   |           .gitignore
+|   |   |           
+|   |   +---framework
+|   |   |   |   .gitignore
+|   |   |   |   
+|   |   |   +---cache
+|   |   |   |   |   .gitignore
+|   |   |   |   |   
+|   |   |   |   \---data
+|   |   |   |           .gitignore
+|   |   |   |           
+|   |   |   +---sessions
+|   |   |   |       .gitignore
+|   |   |   |       
+|   |   |   +---testing
+|   |   |   |       .gitignore
+|   |   |   |       
+|   |   |   \---views
+|   |   |           .gitignore
+|   |   |           73225ec48bb77eca7f052f17905ddba0.php
+|   |   |           
+|   |   \---logs
+|   |           .gitignore
+|   |           laravel.log
+|   |           
+|   +---tests
+|   |   |   TestCase.php
+|   |   |   
+|   |   +---Feature
+|   |   |       AuthApiTest.php
+|   |   |       ExampleTest.php
+|   |   |       LeadApiTest.php
+|   |   |       OrderApiTest.php
+|   |   |       PaymentApiTest.php
+|   |   |       VisitCheckinTest.php
+|   |   |       
+|   |   \---Unit
+|   |           ExampleTest.php
+|   \---vendor (kebanyakan, kalo mau liat bilang aja)
+|       |   autoload.php
++---frontend
+|   |   .env
+|   |   .env.example
+|   |   .gitignore
+|   |   .oxlintrc.json
+|   |   index.html
+|   |   package-lock.json
+|   |   package.json
+|   |   README.md
+|   |   vite.config.js
+|   +---public
+|   |       favicon.svg
+|   |       icons.svg
+|   |       mazzoni-logo.png
+|   |       
+|   \---src
+|       |   App.jsx
+|       |   index.css
+|       |   main.jsx
+|       |   
+|       +---api
+|       |       auth.js
+|       |       client.js
+|       |       index.js
+|       |       
+|       +---assets
+|       |       hero.png
+|       |       react.svg
+|       |       vite.svg
+|       |       
+|       +---components
+|       |       BottomNav.jsx
+|       |       GlobalSearch.jsx
+|       |       PhoneFrame.jsx
+|       |       PhotoUpload.jsx
+|       |       ui.jsx
+|       |       
+|       +---context
+|       |       AuthContext.jsx
+|       |       UiContext.jsx
+|       |       
+|       +---hooks
+|       |       useDebounce.js
+|       |       useDraftSync.js
+|       |       useGeolocation.js
+|       |       useOnline.js
+|       |       
+|       +---lib
+|       |       drafts.js
+|       |       format.js
+|       |       uuid.js
+|       |       
+|       +---pages
+|       |       ArReport.jsx
+|       |       Canvassing.jsx
+|       |       Checkin.jsx
+|       |       CustomerDetail.jsx
+|       |       Customers.jsx
+|       |       Expenses.jsx
+|       |       Home.jsx
+|       |       Leads.jsx
+|       |       Login.jsx
+|       |       NewExpense.jsx
+|       |       NewLead.jsx
+|       |       NewOrder.jsx
+|       |       NewReturn.jsx
+|       |       Orders.jsx
+|       |       Payment.jsx
+|       |       Promo.jsx
+|       |       Returns.jsx
+|       |       Stock.jsx
+|       |       Tracker.jsx
+|       |       VisitMode.jsx
+|       |       Visits.jsx
+|       |       
+|       \---styles
+|               prototype.css
+|               
+\---scripts
+        backup-version.ps1
+        bump-version.ps1
+        

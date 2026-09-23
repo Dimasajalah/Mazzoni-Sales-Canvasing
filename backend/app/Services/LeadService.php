@@ -1,4 +1,5 @@
 <?php
+// backend/app/Services/LeadService.php
 
 namespace App\Services;
 
@@ -107,6 +108,9 @@ class LeadService
         return LeadFollowup::create([
             'lead_id' => $lead->id,
             'salesperson_id' => $data['salesperson_id'] ?? $user->id,
+            'task_set_id' => $data['task_set_id'] ?? null,
+            'task_type_id' => $data['task_type_id'] ?? null,
+            'task_id' => $data['task_id'] ?? null,
             'followup_at' => $data['followup_at'],
             'notes' => $data['notes'] ?? null,
             'status' => 'PENDING',

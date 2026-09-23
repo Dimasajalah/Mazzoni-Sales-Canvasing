@@ -1,4 +1,5 @@
 <?php
+// backend/app/Models/Customer.php
 
 namespace App\Models;
 
@@ -10,7 +11,7 @@ class Customer extends Model
 {
     protected $fillable = [
         'customer_code', 'name', 'customer_group', 'grade', 'address', 'city', 'phone', 'email', 'npwp',
-        'credit_limit', 'latitude', 'longitude', 'salesperson_id', 'active', 'epicor_customer_num',
+        'credit_limit', 'credit_hold', 'latitude', 'longitude', 'salesperson_id', 'active', 'epicor_customer_num',
         'external_system', 'external_id', 'sync_status', 'last_sync_at',
     ];
 
@@ -18,6 +19,7 @@ class Customer extends Model
     {
         return [
             'credit_limit' => 'decimal:2',
+            'credit_hold' => 'boolean',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
             'active' => 'boolean',

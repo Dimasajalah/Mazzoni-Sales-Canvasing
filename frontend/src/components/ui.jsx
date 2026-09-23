@@ -1,3 +1,4 @@
+//frontend/src/components/ui.jsx
 import { useNavigate } from 'react-router-dom'
 
 export function TopBar({ title, backTo, onBack }) {

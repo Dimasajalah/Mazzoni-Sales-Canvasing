@@ -1,4 +1,5 @@
 <?php
+// backend/app/Models/SalesOrderLine.php
 
 namespace App\Models;
 
@@ -8,12 +9,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class SalesOrderLine extends Model
 {
     protected $fillable = [
-        'order_id', 'product_id', 'qty', 'uom', 'unit_price', 'discount', 'line_total',
+        'order_id', 'product_id', 'is_custom', 'custom_part_name',
+        'qty', 'uom', 'unit_price', 'discount', 'line_total',
     ];
 
     protected function casts(): array
     {
         return [
+            'is_custom' => 'boolean',
             'qty' => 'decimal:2',
             'unit_price' => 'decimal:2',
             'discount' => 'decimal:2',
@@ -29,5 +32,18 @@ class SalesOrderLine extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Nama produk untuk ditampilkan — dari master Product kalau bukan NPD,
+     * atau dari custom_part_name kalau produk NPD (free-text).
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        if ($this->is_custom) {
+            return $this->custom_part_name ?? '(Produk NPD tanpa nama)';
+        }
+
+        return $this->product?->name ?? '(Produk tidak ditemukan)';
     }
 }

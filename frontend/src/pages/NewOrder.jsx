@@ -1,3 +1,4 @@
+// frontend/src/pages/NewOrder.jsx
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { createOrder, getCustomers, getProducts, getPromos } from '../api'
@@ -7,6 +8,8 @@ import { useOnline } from '../hooks/useOnline'
 import { saveDraft } from '../lib/drafts'
 import { fmtRp, listOf, listProducts } from '../lib/format'
 import { uuid } from '../lib/uuid'
+
+const NPD_OPTION_VALUE = '__NPD__'
 
 export default function NewOrder() {
   const loc = useLocation()
@@ -24,6 +27,12 @@ export default function NewOrder() {
   const [lines, setLines] = useState([])
   const [saving, setSaving] = useState(false)
 
+  // State khusus untuk input NPD (free-text)
+  const [isNpd, setIsNpd] = useState(false)
+  const [npdName, setNpdName] = useState('')
+  const [npdUom, setNpdUom] = useState('PCS')
+  const [npdPrice, setNpdPrice] = useState('')
+
   useEffect(() => {
     Promise.all([getCustomers({}), getProducts({}), getPromos({})])
       .then(([c, p, pr]) => {
@@ -38,18 +47,56 @@ export default function NewOrder() {
       .catch((e) => showToast(e.message, { warn: true }))
   }, [showToast])
 
+  const onProductChange = (value) => {
+    setProductId(value)
+    setIsNpd(value === NPD_OPTION_VALUE)
+  }
+
+  const resetNpdFields = () => {
+    setNpdName('')
+    setNpdUom('PCS')
+    setNpdPrice('')
+  }
+
   const addLine = () => {
+    const q = Number(qty) || 1
+
+    if (isNpd) {
+      const name = npdName.trim()
+      if (!name) {
+        showToast('Nama produk NPD wajib diisi', { warn: true })
+        return
+      }
+      const price = Number(npdPrice) || 0
+      setLines((prev) => [
+        ...prev,
+        {
+          is_custom: true,
+          custom_part_name: name,
+          part_num: 'NPD',
+          description: name,
+          qty: q,
+          uom: npdUom || 'PCS',
+          unit_price: price,
+          line_total: q * price,
+        },
+      ])
+      resetNpdFields()
+      return
+    }
+
     const p = products.find((x) => String(x.id) === String(productId))
     if (!p) return
-    const q = Number(qty) || 1
     const price = Number(p.price) || 0
     setLines((prev) => [
       ...prev,
       {
+        is_custom: false,
         product_id: p.product_id || p.id,
         part_num: p.part_num || p.sku,
         description: p.description || p.name,
         qty: q,
+        uom: p.uom || 'PCS',
         unit_price: price,
         line_total: q * price,
       },
@@ -72,12 +119,16 @@ export default function NewOrder() {
     const client_uuid = uuid()
     const payload = {
       customer_id: customerId,
+      lead_id: loc.state?.leadId || null,
       customer_po: customerPo || null,
       promo_id: promoId || null,
       client_uuid,
       lines: lines.map((l) => ({
-        product_id: l.product_id,
+        product_id: l.is_custom ? null : l.product_id,
+        is_custom: !!l.is_custom,
+        custom_part_name: l.is_custom ? l.custom_part_name : null,
         qty: l.qty,
+        uom: l.uom,
         unit_price: l.unit_price,
       })),
     }
@@ -91,8 +142,12 @@ export default function NewOrder() {
 
     setSaving(true)
     try {
-      await createOrder(payload)
-      showToast('Order berhasil dibuat')
+      const res = await createOrder(payload)
+      if (res?.status === 'HOLD') {
+        showToast('Order tersimpan tapi di-HOLD — customer dalam status Credit Hold', { warn: true })
+      } else {
+        showToast('Order berhasil dibuat')
+      }
       nav('/orders')
     } catch (err) {
       saveDraft('order', { id: client_uuid, client_uuid, payload })
@@ -122,14 +177,45 @@ export default function NewOrder() {
         </div>
         <div className="field">
           <label>Produk</label>
-          <select value={productId} onChange={(e) => setProductId(e.target.value)}>
+          <select value={productId} onChange={(e) => onProductChange(e.target.value)}>
             {products.map((p) => (
               <option key={p.id} value={p.id}>
                 {(p.part_num || p.sku) + ' — ' + (p.description || p.name)}
               </option>
             ))}
+            <option value={NPD_OPTION_VALUE}>— Lainnya (Produk Baru / NPD) —</option>
           </select>
         </div>
+
+        {isNpd && (
+          <div className="card" style={{ padding: 10, marginBottom: 12, border: '1px dashed var(--orange)' }}>
+            <div className="field">
+              <label>Nama Produk NPD</label>
+              <input
+                value={npdName}
+                onChange={(e) => setNpdName(e.target.value)}
+                placeholder="Ketik nama produk baru"
+              />
+            </div>
+            <div className="row">
+              <div className="field" style={{ flex: 1 }}>
+                <label>UOM</label>
+                <input value={npdUom} onChange={(e) => setNpdUom(e.target.value)} placeholder="PCS" />
+              </div>
+              <div className="field" style={{ flex: 1 }}>
+                <label>Harga Satuan (opsional)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={npdPrice}
+                  onChange={(e) => setNpdPrice(e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="row">
           <div className="field" style={{ flex: 1 }}>
             <label>Qty</label>
@@ -144,9 +230,12 @@ export default function NewOrder() {
         {lines.map((l, i) => (
           <div key={i} className="card li" style={{ padding: 10, marginBottom: 8 }}>
             <div className="main">
-              <div className="n">{l.description}</div>
+              <div className="n">
+                {l.description}
+                {l.is_custom && <span className="badge" style={{ marginLeft: 6 }}>NPD</span>}
+              </div>
               <div className="d">
-                {l.part_num} · {l.qty} × {fmtRp(l.unit_price)}
+                {l.part_num} · {l.qty} {l.uom} × {fmtRp(l.unit_price)}
               </div>
             </div>
             <div className="r">{fmtRp(l.line_total)}</div>

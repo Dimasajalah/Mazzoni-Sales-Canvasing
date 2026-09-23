@@ -1,4 +1,5 @@
 <?php
+// backend/app/Http/Controllers/Api/V1/SalesOrderController.php
 
 namespace App\Http\Controllers\Api\V1;
 
@@ -28,6 +29,7 @@ class SalesOrderController extends Controller
     {
         $data = $request->validate([
             'customer_id' => ['required', 'exists:customers,id'],
+            'lead_id' => ['nullable', 'exists:leads,id'],
             'customer_po' => ['nullable', 'string', 'max:100'],
             'order_date' => ['nullable', 'date'],
             'discount' => ['nullable', 'numeric', 'min:0'],
@@ -35,12 +37,44 @@ class SalesOrderController extends Controller
             'notes' => ['nullable', 'string'],
             'client_uuid' => ['nullable', 'uuid'],
             'lines' => ['required', 'array', 'min:1'],
-            'lines.*.product_id' => ['required', 'exists:products,id'],
+
+            // Produk dari master Product — wajib diisi KECUALI baris ini NPD (is_custom = true)
+            'lines.*.product_id' => ['required_if:lines.*.is_custom,false', 'nullable', 'exists:products,id'],
+
+            // Penanda baris NPD (produk baru/belum terdaftar di master Product)
+            'lines.*.is_custom' => ['nullable', 'boolean'],
+
+            // Wajib diisi kalau baris ini NPD
+            'lines.*.custom_part_name' => ['required_if:lines.*.is_custom,true', 'nullable', 'string', 'max:255'],
+
             'lines.*.qty' => ['required', 'numeric', 'gt:0'],
             'lines.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'lines.*.discount' => ['nullable', 'numeric', 'min:0'],
             'lines.*.uom' => ['nullable', 'string'],
         ]);
+
+        // Guard tambahan: pastikan tiap baris punya salah satu — product_id ATAU custom_part_name, tidak boleh dua-duanya kosong
+        foreach ($data['lines'] as $i => $line) {
+            $isCustom = (bool) ($line['is_custom'] ?? false);
+            $hasProduct = ! empty($line['product_id']);
+            $hasCustomName = ! empty($line['custom_part_name']);
+
+            if (! $isCustom && ! $hasProduct) {
+                return ApiResponse::error(
+                    "Baris ke-".($i + 1).": product_id wajib diisi untuk produk non-NPD",
+                    null,
+                    422
+                );
+            }
+
+            if ($isCustom && ! $hasCustomName) {
+                return ApiResponse::error(
+                    "Baris ke-".($i + 1).": nama produk (custom_part_name) wajib diisi untuk produk NPD",
+                    null,
+                    422
+                );
+            }
+        }
 
         $header = collect($data)->except('lines')->all();
         $order = $this->salesOrderService->create($header, $data['lines'], $request->user());

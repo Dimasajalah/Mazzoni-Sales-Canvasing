@@ -1,5 +1,5 @@
 <?php
-
+//backend/config/services.php
 return [
 
     /*
@@ -34,5 +34,12 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-
+    'epicor' => [
+        'base_url'   => env('EPICOR_BASE_URL'),      // e.g. https://appsvr/ga_dev
+        'company'    => env('EPICOR_COMPANY', 'MJU01'),
+        'username'   => env('EPICOR_USERNAME'),
+        'password'   => env('EPICOR_PASSWORD'),
+        'api_key'    => env('EPICOR_API_KEY'),
+        'verify_ssl' => env('EPICOR_VERIFY_SSL', true),
+    ],
 ];

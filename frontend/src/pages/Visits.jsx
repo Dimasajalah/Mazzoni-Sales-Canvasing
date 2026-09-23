@@ -1,9 +1,11 @@
+//frontend/src/pages/Visits.jsx
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getVisits } from '../api'
 import { ListItem, Screen, TopBar } from '../components/ui'
 import { useUi } from '../context/UiContext'
 import { listOf } from '../lib/format'
+import VisitsMap from '../components/VisitsMap'
 
 export default function Visits() {
   const [items, setItems] = useState([])
@@ -22,6 +24,7 @@ export default function Visits() {
       <button type="button" className="btn" style={{ marginBottom: 14 }} onClick={() => nav('/checkin')}>
         Check-in Kunjungan
       </button>
+      {items.length > 0 && <VisitsMap visits={items} />}
       <div className="section-h">Riwayat hari ini</div>
       {items.length === 0 ? (
         <div className="muted">Belum ada kunjungan</div>
@@ -31,9 +34,8 @@ export default function Visits() {
             key={v.id}
             barColor={v.valid === false || v.checkin_distance > 500 ? 'var(--amber)' : 'var(--green)'}
             title={v.customer?.name || v.customer_name || v.cust}
-            subtitle={`${v.checkin_at || v.in || '—'} → ${v.checkout_at || v.out || '…'} · ${
-              v.visit_result || v.result || '—'
-            }`}
+            subtitle={`${v.checkin_at || v.in || '—'} → ${v.checkout_at || v.out || '…'} · ${v.visit_result || v.result || '—'
+              }`}
             right={
               v.checkin_distance != null
                 ? `${Math.round(v.checkin_distance)} m`

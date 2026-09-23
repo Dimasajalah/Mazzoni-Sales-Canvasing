@@ -1,4 +1,5 @@
 <?php
+// backend/app/Http/Controllers/Api/V1/LeadController.php
 
 namespace App\Http\Controllers\Api\V1;
 
@@ -11,9 +12,7 @@ use Illuminate\Http\Request;
 
 class LeadController extends Controller
 {
-    public function __construct(private readonly LeadService $leadService)
-    {
-    }
+    public function __construct(private readonly LeadService $leadService) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -35,6 +34,8 @@ class LeadController extends Controller
             'email' => ['nullable', 'email'],
             'business_type' => ['nullable', 'string', 'max:100'],
             'npwp' => ['nullable', 'string', 'max:50'],
+            'ktp' => ['required', 'string', 'max:20'],
+            'scoring' => ['nullable', 'in:A,B,C'],
             'latitude' => ['nullable', 'numeric'],
             'longitude' => ['nullable', 'numeric'],
             'stage' => ['nullable', 'string'],
@@ -74,6 +75,8 @@ class LeadController extends Controller
             'email' => ['nullable', 'email'],
             'business_type' => ['nullable', 'string', 'max:100'],
             'npwp' => ['nullable', 'string', 'max:50'],
+            'ktp' => ['sometimes', 'required', 'string', 'max:20'],
+            'scoring' => ['nullable', 'in:A,B,C'],
             'latitude' => ['nullable', 'numeric'],
             'longitude' => ['nullable', 'numeric'],
             'stage' => ['nullable', 'string'],
@@ -106,6 +109,9 @@ class LeadController extends Controller
         $data = $request->validate([
             'followup_at' => ['required', 'date'],
             'notes' => ['nullable', 'string'],
+            'task_set_id' => ['nullable', 'exists:task_sets,id'],
+            'task_type_id' => ['nullable', 'exists:task_types,id'],
+            'task_id' => ['nullable', 'exists:tasks,id'],
         ]);
 
         return ApiResponse::success(

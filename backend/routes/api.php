@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\ReturnController;
 use App\Http\Controllers\Api\V1\SalesOrderController;
 use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\V1\VisitController;
+use App\Http\Controllers\Api\V1\TaskController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', [HealthController::class, 'health']);
@@ -48,6 +49,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/promotions', [PromotionController::class, 'index']);
         Route::get('/promotions/{id}', [PromotionController::class, 'show']);
         Route::post('/promotions/offer', [PromotionController::class, 'offer']);
+        Route::get('/customers/{id}/promo-offers', [PromotionController::class, 'customerHistory']);
 
         Route::get('/orders', [SalesOrderController::class, 'index']);
         Route::post('/orders', [SalesOrderController::class, 'store']);
@@ -69,5 +71,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/returns', [ReturnController::class, 'store']);
         Route::get('/returns/{id}', [ReturnController::class, 'show']);
         Route::patch('/returns/{id}/status', [ReturnController::class, 'updateStatus']);
+
+        Route::get('/task-sets', [TaskController::class, 'taskSets']);
+        Route::get('/task-types', [TaskController::class, 'taskTypes']);
+        Route::get('/tasks', [TaskController::class, 'tasks']);
     });
 });

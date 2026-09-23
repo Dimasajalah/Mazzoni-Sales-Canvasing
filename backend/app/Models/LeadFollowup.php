@@ -1,4 +1,5 @@
 <?php
+// backend/app/Models/LeadFollowup.php
 
 namespace App\Models;
 
@@ -10,6 +11,9 @@ class LeadFollowup extends Model
     protected $fillable = [
         'lead_id',
         'salesperson_id',
+        'task_set_id',
+        'task_type_id',
+        'task_id',
         'followup_at',
         'notes',
         'status',
@@ -30,5 +34,20 @@ class LeadFollowup extends Model
     public function salesperson(): BelongsTo
     {
         return $this->belongsTo(User::class, 'salesperson_id');
+    }
+
+    public function taskSet(): BelongsTo
+    {
+        return $this->belongsTo(TaskSet::class);
+    }
+
+    public function taskType(): BelongsTo
+    {
+        return $this->belongsTo(TaskType::class);
+    }
+
+    public function task(): BelongsTo
+    {
+        return $this->belongsTo(Task::class);
     }
 }
