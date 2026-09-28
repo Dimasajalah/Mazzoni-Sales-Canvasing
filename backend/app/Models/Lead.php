@@ -9,8 +9,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Lead extends Model
 {
     protected $fillable = [
-        'business_name', 'owner_name', 'address', 'phone', 'email', 'business_type', 'npwp', 'ktp', 'scoring',
-        'latitude', 'longitude', 'salesperson_id', 'stage', 'estimated_value', 'register_date', 'client_uuid',
+        'business_name',
+        'owner_name',
+        'address',
+        'phone',
+        'email',
+        'business_type',
+        'npwp',
+        'ktp',
+        'scoring',
+        'task_set_id',
+        'task_type_id',
+        'task_id',
+        'latitude',
+        'longitude',
+        'salesperson_id',
+        'stage',
+        'estimated_value',
+        'register_date',
+        'client_uuid',
     ];
 
     protected function casts(): array
@@ -36,5 +53,20 @@ class Lead extends Model
     public function followups(): HasMany
     {
         return $this->hasMany(LeadFollowup::class);
+    }
+
+    public function taskSet(): BelongsTo
+    {
+        return $this->belongsTo(TaskSet::class);
+    }
+
+    public function taskType(): BelongsTo
+    {
+        return $this->belongsTo(TaskType::class);
+    }
+
+    public function task(): BelongsTo
+    {
+        return $this->belongsTo(Task::class);
     }
 }

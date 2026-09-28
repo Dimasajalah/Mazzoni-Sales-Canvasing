@@ -15,7 +15,7 @@ const mapOptions = {
   keyboardShortcuts: true,
 };
 
-export default function LocationPicker({ value, onChange }) {
+export default function LocationPicker({ value, onChange, onAddressChange }) {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
@@ -49,10 +49,12 @@ export default function LocationPicker({ value, onChange }) {
     if (!geocoderRef.current) return;
     geocoderRef.current.geocode({ location: { lat, lng } }, (results, status) => {
       if (status === "OK" && results?.[0]) {
-        setAddress(results[0].formatted_address);
+        const formatted = results[0].formatted_address;
+        setAddress(formatted);
+        onAddressChange?.(formatted);
       }
     });
-  }, []);
+  }, [onAddressChange]);
 
   useEffect(() => {
     if (isLoaded) reverseGeocode(position.lat, position.lng);
@@ -103,6 +105,7 @@ export default function LocationPicker({ value, onChange }) {
         mapRef.panTo({ lat, lng });
         mapRef.setZoom(17);
       }
+      onAddressChange?.(prediction.description);
       setQuery("");
       setPredictions([]);
     });

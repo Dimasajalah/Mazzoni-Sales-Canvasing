@@ -46,6 +46,22 @@ export const getPromos = (params = {}) => {
   return apiGet(`/promotions${q ? `?${q}` : ''}`).then(unwrap)
 }
 
+export const getSamples = (params = {}) => {
+  const q = new URLSearchParams(params).toString()
+  return apiGet(`/samples${q ? `?${q}` : ''}`).then(unwrap)
+}
+
+export const createSample = (payload) => apiPost('/samples', payload).then(unwrap)
+
+export const getSample = (id) => apiGet(`/samples/${id}`).then(unwrap)
+
+export const getSampleFeedbacks = (params = {}) => {
+  const q = new URLSearchParams(params).toString()
+  return apiGet(`/sample-feedbacks${q ? `?${q}` : ''}`).then(unwrap)
+}
+
+export const createSampleFeedback = (payload) => apiPost('/sample-feedbacks', payload).then(unwrap)
+
 export const offerPromo = (promoId, payload = {}) =>
   apiPost('/promotions/offer', {
     promo_id: promoId,

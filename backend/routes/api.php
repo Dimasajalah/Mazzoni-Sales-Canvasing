@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\SalesOrderController;
 use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\V1\VisitController;
 use App\Http\Controllers\Api\V1\TaskController;
+use App\Http\Controllers\Api\V1\ProductSampleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', [HealthController::class, 'health']);
@@ -50,6 +51,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/promotions/{id}', [PromotionController::class, 'show']);
         Route::post('/promotions/offer', [PromotionController::class, 'offer']);
         Route::get('/customers/{id}/promo-offers', [PromotionController::class, 'customerHistory']);
+
+        Route::get('/samples', [ProductSampleController::class, 'index']);
+        Route::post('/samples', [ProductSampleController::class, 'store']);
+        Route::get('/samples/{id}', [ProductSampleController::class, 'show']);
+
+        Route::get('/sample-feedbacks', [ProductSampleController::class, 'feedbackIndex']);
+        Route::post('/sample-feedbacks', [ProductSampleController::class, 'feedbackStore']);
 
         Route::get('/orders', [SalesOrderController::class, 'index']);
         Route::post('/orders', [SalesOrderController::class, 'store']);

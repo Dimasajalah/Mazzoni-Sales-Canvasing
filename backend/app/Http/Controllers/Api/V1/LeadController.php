@@ -36,6 +36,9 @@ class LeadController extends Controller
             'npwp' => ['nullable', 'string', 'max:50'],
             'ktp' => ['required', 'string', 'max:20'],
             'scoring' => ['nullable', 'in:A,B,C'],
+            'task_set_id' => ['nullable', 'exists:task_sets,id'],
+            'task_type_id' => ['nullable', 'exists:task_types,id'],
+            'task_id' => ['nullable', 'exists:tasks,id'],
             'latitude' => ['nullable', 'numeric'],
             'longitude' => ['nullable', 'numeric'],
             'stage' => ['nullable', 'string'],
@@ -82,6 +85,9 @@ class LeadController extends Controller
             'stage' => ['nullable', 'string'],
             'estimated_value' => ['nullable', 'numeric'],
             'notes' => ['nullable', 'string'],
+            'task_set_id' => ['nullable', 'exists:task_sets,id'],
+            'task_type_id' => ['nullable', 'exists:task_types,id'],
+            'task_id' => ['nullable', 'exists:tasks,id'],
         ]);
 
         return ApiResponse::success($this->leadService->update($lead, $data, $request->user()), 'Lead diperbarui');

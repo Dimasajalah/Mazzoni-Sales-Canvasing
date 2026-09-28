@@ -1,3 +1,4 @@
+//frontend/src/lib/format.js
 export function money(n) {
   const v = Number(n) || 0
   return 'Rp ' + v.toLocaleString('id-ID')
@@ -54,11 +55,9 @@ export function bucketOf(days) {
 
 export function stageColor(stage) {
   const s = String(stage || '').toUpperCase()
-  if (s === 'NEW') return 'var(--orange2)'
-  if (s === 'CONTACTED' || s === 'CONTACT') return 'var(--blue)'
-  if (s === 'QUALIFIED') return 'var(--orange)'
+  if (s === 'LEAD') return 'var(--blue)'
+  if (s === 'OPPORTUNITY') return 'var(--orange)'
   if (s === 'QUOTE') return 'var(--amber)'
-  if (s === 'WON') return 'var(--green)'
   if (s === 'LOST') return 'var(--pink)'
   return 'var(--mut)'
 }

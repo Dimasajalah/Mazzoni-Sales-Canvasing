@@ -6,7 +6,8 @@ import { BottomNav, Fab } from './components/BottomNav'
 import { PhoneFrame } from './components/PhoneFrame'
 import './styles/prototype.css'
 import './index.css'
-
+import NewSample from './pages/NewSample'
+import NewSampleFeedback from './pages/NewSampleFeedback'
 import Login from './pages/Login'
 import Home from './pages/Home'
 import Leads from './pages/Leads'
@@ -63,6 +64,8 @@ function AppRoutes() {
           <Route path="/visits" element={<Protected><Visits /></Protected>} />
           <Route path="/checkin" element={<Protected><Checkin /></Protected>} />
           <Route path="/checkin/:customerId" element={<Protected><Checkin /></Protected>} />
+          <Route path="/samples/new" element={<Protected><NewSample /></Protected>} />
+          <Route path="/sample-feedbacks/new" element={<Protected><NewSampleFeedback /></Protected>} />
           <Route path="/visit-mode/:id" element={<Protected><VisitMode /></Protected>} />
           <Route path="/orders" element={<Protected><Orders /></Protected>} />
           <Route path="/orders/new" element={<Protected><NewOrder /></Protected>} />

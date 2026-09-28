@@ -8,11 +8,10 @@ import { fmtRp, listOf, stageColor } from '../lib/format'
 
 const FILTERS = [
   { value: 'ALL', label: 'All' },
-  { value: 'NEW', label: 'New' },
-  { value: 'CONTACTED', label: 'Contacted' },
-  { value: 'QUALIFIED', label: 'Qualified' },
+  { value: 'LEAD', label: 'Lead' },
+  { value: 'OPPORTUNITY', label: 'Opportunity' },
   { value: 'QUOTE', label: 'Quote' },
-  { value: 'WON', label: 'Won' },
+  { value: 'LOST', label: 'Lost' },
 ]
 
 function FollowupForm({ lead, onDone, showToast }) {
@@ -132,18 +131,18 @@ export default function Leads() {
 
   useEffect(() => {
     let alive = true
-    ;(async () => {
-      setLoading(true)
-      try {
-        const params = filter === 'ALL' ? {} : { stage: filter }
-        const data = await getLeads(params)
-        if (alive) setItems(listOf(data))
-      } catch (e) {
-        if (alive) showToast(e.message || 'Gagal muat leads', { warn: true })
-      } finally {
-        if (alive) setLoading(false)
-      }
-    })()
+      ; (async () => {
+        setLoading(true)
+        try {
+          const params = filter === 'ALL' ? {} : { stage: filter }
+          const data = await getLeads(params)
+          if (alive) setItems(listOf(data))
+        } catch (e) {
+          if (alive) showToast(e.message || 'Gagal muat leads', { warn: true })
+        } finally {
+          if (alive) setLoading(false)
+        }
+      })()
     return () => {
       alive = false
     }
@@ -164,28 +163,57 @@ export default function Leads() {
 
         <FollowupForm lead={lead} showToast={showToast} onDone={closeSheet} />
 
-        <div style={{ height: 12 }} />
-        <button
-          type="button"
-          className="btn ghost"
-          style={{ marginBottom: 8 }}
-          onClick={() => {
-            closeSheet()
-            nav('/orders/new', { state: { leadId: lead.id, customerName: lead.business_name } })
-          }}
-        >
-          Buat Order
-        </button>
-        <button
-          type="button"
-          className="btn ghost"
-          onClick={() => {
-            closeSheet()
-            nav('/canvassing')
-          }}
-        >
-          Buka Canvassing
-        </button>
+        <div style={{ height: 4 }} />
+        <div className="qa">
+          <div
+            className="item"
+            onClick={() => {
+              closeSheet()
+              nav('/orders/new', { state: { leadId: lead.id, customerName: lead.business_name } })
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="ic" style={{ background: 'rgba(238,106,10,.15)' }}>🛒</div>
+            <div className="t">Order</div>
+          </div>
+          <div
+            className="item"
+            onClick={() => {
+              closeSheet()
+              nav('/canvassing')
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="ic" style={{ background: 'rgba(42,111,214,.15)' }}>📍</div>
+            <div className="t">Canvassing</div>
+          </div>
+          <div
+            className="item"
+            onClick={() => {
+              closeSheet()
+              nav('/samples/new', { state: { leadId: lead.id, customerName: lead.business_name } })
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="ic" style={{ background: 'rgba(18,160,90,.15)' }}>🎁</div>
+            <div className="t">Sample</div>
+          </div>
+          <div
+            className="item"
+            onClick={() => {
+              closeSheet()
+              nav('/sample-feedbacks/new', { state: { leadId: lead.id, customerName: lead.business_name } })
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="ic" style={{ background: 'rgba(184,116,0,.15)' }}>📝</div>
+            <div className="t">Feedback</div>
+          </div>
+        </div>
       </div>
     ))
   }

@@ -8,6 +8,7 @@ import { useUi } from '../context/UiContext'
 import { useGeolocation } from '../hooks/useGeolocation'
 import { useOnline } from '../hooks/useOnline'
 import { saveDraft } from '../lib/drafts'
+import { getTaskSets, getTaskTypes, getTasks } from '../api'
 import LocationPicker from '../components/LocationPicker'
 import { uuid } from '../lib/uuid'
 
@@ -19,6 +20,12 @@ export default function NewLead() {
   const nav = useNavigate()
   const [saving, setSaving] = useState(false)
   const [mapPosition, setMapPosition] = useState(null)
+  const [taskSets, setTaskSets] = useState([])
+  const [taskTypes, setTaskTypes] = useState([])
+  const [tasks, setTasks] = useState([])
+  const [taskSetId, setTaskSetId] = useState('')
+  const [taskTypeId, setTaskTypeId] = useState('')
+  const [taskId, setTaskId] = useState('')
   const [form, setForm] = useState({
     business_name: '',
     owner_name: '',
@@ -41,6 +48,26 @@ export default function NewLead() {
     }
   }, [coords, mapPosition])
 
+  useEffect(() => {
+    Promise.all([getTaskSets(), getTaskTypes()])
+      .then(([ts, tt]) => {
+        setTaskSets(Array.isArray(ts) ? ts : ts?.data || [])
+        setTaskTypes(Array.isArray(tt) ? tt : tt?.data || [])
+      })
+      .catch(() => { })
+  }, [])
+
+  useEffect(() => {
+    if (!taskTypeId) {
+      setTasks([])
+      setTaskId('')
+      return
+    }
+    getTasks({ task_type_id: taskTypeId })
+      .then((res) => setTasks(Array.isArray(res) ? res : res?.data || []))
+      .catch(() => { })
+  }, [taskTypeId])
+
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
   const submit = async (e) => {
@@ -49,6 +76,9 @@ export default function NewLead() {
     const finalcoords = mapPosition || coords
     const payload = {
       ...form,
+      task_set_id: taskSetId || null,
+      task_type_id: taskTypeId || null,
+      task_id: taskId || null,
       latitude: finalcoords?.lat ?? null,
       longitude: finalcoords?.lng ?? null,
       client_uuid,
@@ -89,7 +119,12 @@ export default function NewLead() {
         </div>
         <div className="field">
           <label>Alamat</label>
-          <textarea rows={2} value={form.address} onChange={set('address')} />
+          <textarea
+            rows={2}
+            value={form.address}
+            onChange={set('address')}
+            placeholder="Pilih lokasi di peta di bawah untuk isi otomatis"
+          />
         </div>
         <div className="field half">
           <label>No. HP/Telp</label>
@@ -122,13 +157,44 @@ export default function NewLead() {
           <input required value={form.ktp} onChange={set('ktp')} />
         </div>
         <div className="field">
+          <label>Task Set</label>
+          <select value={taskSetId} onChange={(e) => setTaskSetId(e.target.value)}>
+            <option value="">— Pilih Task Set —</option>
+            {taskSets.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label>Task Type</label>
+          <select value={taskTypeId} onChange={(e) => setTaskTypeId(e.target.value)}>
+            <option value="">— Pilih Task Type —</option>
+            {taskTypes.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label>Task</label>
+          <select value={taskId} onChange={(e) => setTaskId(e.target.value)} disabled={!taskTypeId}>
+            <option value="">{taskTypeId ? '— Pilih Task —' : 'Pilih Task Type dahulu'}</option>
+            {tasks.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
           <label>NPWP</label>
           <input value={form.npwp} onChange={set('npwp')} />
         </div>
 
         <div className="map">
           <div className="gps">GPS {coords ? 'OK' : gpsError ? 'Gagal' : '…'}</div>
-          <LocationPicker value={mapPosition} onChange={setMapPosition} />
+          <LocationPicker
+            value={mapPosition}
+            onChange={setMapPosition}
+            onAddressChange={(addr) => setForm((f) => ({ ...f, address: addr }))}
+          />
           <div className="coord">
             {mapPosition
               ? `${mapPosition.lat.toFixed(5)}, ${mapPosition.lng.toFixed(5)}`
