@@ -33,8 +33,10 @@ export default function Visits() {
           <ListItem
             key={v.id}
             barColor={v.valid === false || v.checkin_distance > 500 ? 'var(--amber)' : 'var(--green)'}
-            title={v.customer?.name || v.customer_name || v.cust}
-            subtitle={`${v.checkin_at || v.in || '—'} → ${v.checkout_at || v.out || '…'} · ${v.visit_result || v.result || '—'
+            // Hasil meeting lanjutan: kunjungan sekarang bisa milik Lead (belum tentu ada Customer
+            // — lihat poin check-in ke Lead), jadi nama ditampilkan dari salah satu yang ada.
+            title={v.customer?.name || v.lead?.business_name || v.customer_name || v.cust}
+            subtitle={`${v.checkin_at || v.in || '—'} → ${v.checkout_at || v.out || '…'} · ${v.visit_result || v.result || (v.checkout_at ? '—' : 'Belum checkout')
               }`}
             right={
               v.checkin_distance != null
@@ -43,6 +45,10 @@ export default function Visits() {
                   ? `${v.dist} m`
                   : null
             }
+            // Sebelumnya baris ini tidak bisa diklik sama sekali — kunjungan yang lupa di-Checkout
+            // jadi tidak ada jalan untuk dibuka lagi lewat UI, tertahan selamanya memblokir
+            // check-in baru ke lead/customer yang sama ("Ada kunjungan aktif...").
+            onClick={() => nav(`/visit-mode/${v.id}`)}
           />
         ))
       )}

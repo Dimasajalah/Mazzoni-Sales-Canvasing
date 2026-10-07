@@ -3,8 +3,10 @@ Volume serial number is 88C3-FD64
 C:.
 |   .gitignore
 |   CHANGELOG.md
+|   project_structure.txt
 |   README.md
 |   structure.txt
+|   structure2.txt
 |   VERSION
 |   
 +---backend
@@ -26,6 +28,11 @@ C:.
 |   |   vite.config.js
 |   |   
 |   +---app
+|   |   +---Console
+|   |   |   \---Commands
+|   |   |           EpicorTestConnection.php
+|   |   |           SyncCustomersFromEpicor.php
+|   |   |           
 |   |   +---Contracts
 |   |   |       ARDataProviderInterface.php
 |   |   |       CustomerDataProviderInterface.php
@@ -40,26 +47,44 @@ C:.
 |   |   |   \---Controllers
 |   |   |       |   Controller.php
 |   |   |       |   
-|   |   |       \---Api
-|   |   |           |   HealthController.php
-|   |   |           |   
-|   |   |           \---V1
-|   |   |                   ARController.php
-|   |   |                   AuthController.php
-|   |   |                   CustomerController.php
-|   |   |                   DashboardController.php
-|   |   |                   ExpenseController.php
-|   |   |                   InventoryController.php
-|   |   |                   LeadController.php
-|   |   |                   PromotionController.php
-|   |   |                   ReturnController.php
-|   |   |                   SalesOrderController.php
-|   |   |                   SearchController.php
-|   |   |                   VisitController.php
-|   |   |                   
+|   |   |       +---Api
+|   |   |       |   |   HealthController.php
+|   |   |       |   |   
+|   |   |       |   \---V1
+|   |   |       |           ARController.php
+|   |   |       |           AuthController.php
+|   |   |       |           CodeMappingController.php
+|   |   |       |           CompetitorController.php
+|   |   |       |           CustomerController.php
+|   |   |       |           DashboardController.php
+|   |   |       |           DelegationController.php
+|   |   |       |           DiscountStrataController.php
+|   |   |       |           ExpenseController.php
+|   |   |       |           InventoryController.php
+|   |   |       |           LeadController.php
+|   |   |       |           LeadJourneyController.php
+|   |   |       |           LeadTaskController.php
+|   |   |       |           ProductPackagingController.php
+|   |   |       |           ProductSampleController.php
+|   |   |       |           PromotionController.php
+|   |   |       |           QuoteController.php
+|   |   |       |           ReportController.php
+|   |   |       |           ReturnController.php
+|   |   |       |           SalesOrderController.php
+|   |   |       |           SearchController.php
+|   |   |       |           TaskController.php
+|   |   |       |           UserAdminController.php
+|   |   |       |           VisitController.php
+|   |   |       |           
+|   |   |       \---Concerns
+|   |   |               RequiresManager.php
+|   |   |               
 |   |   +---Models
 |   |   |       AuditLog.php
+|   |   |       CodeMapping.php
+|   |   |       Competitor.php
 |   |   |       Customer.php
+|   |   |       DiscountStratum.php
 |   |   |       Expense.php
 |   |   |       ExpenseAttachment.php
 |   |   |       ExpenseStatusHistory.php
@@ -69,12 +94,21 @@ C:.
 |   |   |       InvoiceLine.php
 |   |   |       Lead.php
 |   |   |       LeadActivity.php
+|   |   |       LeadDelegation.php
 |   |   |       LeadFollowup.php
+|   |   |       LeadJourneyEntry.php
+|   |   |       LeadTask.php
 |   |   |       Notification.php
 |   |   |       Payment.php
 |   |   |       Product.php
+|   |   |       ProductPackaging.php
+|   |   |       ProductSample.php
+|   |   |       ProductSampleFeedback.php
 |   |   |       PromoOfferHistory.php
 |   |   |       Promotion.php
+|   |   |       Quote.php
+|   |   |       QuoteCompetitor.php
+|   |   |       QuoteLine.php
 |   |   |       ReturnAttachment.php
 |   |   |       ReturnRequest.php
 |   |   |       ReturnRequestLine.php
@@ -83,6 +117,10 @@ C:.
 |   |   |       SalesOrderLine.php
 |   |   |       Shipment.php
 |   |   |       ShipmentLine.php
+|   |   |       Task.php
+|   |   |       TaskSet.php
+|   |   |       TaskTemplate.php
+|   |   |       TaskType.php
 |   |   |       Territory.php
 |   |   |       User.php
 |   |   |       Visit.php
@@ -113,22 +151,31 @@ C:.
 |   |   |               StagingSalesOrderProvider.php
 |   |   |               
 |   |   +---Services
-|   |   |       ARService.php
-|   |   |       AuditLogService.php
-|   |   |       AuthService.php
-|   |   |       CustomerService.php
-|   |   |       DashboardService.php
-|   |   |       ExpenseService.php
-|   |   |       InventoryService.php
-|   |   |       LeadService.php
-|   |   |       PaymentService.php
-|   |   |       ProductService.php
-|   |   |       PromotionService.php
-|   |   |       ReturnService.php
-|   |   |       SalesOrderService.php
-|   |   |       SearchService.php
-|   |   |       VisitService.php
-|   |   |       
+|   |   |   |   ARService.php
+|   |   |   |   AuditLogService.php
+|   |   |   |   AuthService.php
+|   |   |   |   CustomerService.php
+|   |   |   |   DashboardService.php
+|   |   |   |   DelegationService.php
+|   |   |   |   ExpenseService.php
+|   |   |   |   InventoryService.php
+|   |   |   |   LeadService.php
+|   |   |   |   LeadTaskService.php
+|   |   |   |   NooReportService.php
+|   |   |   |   PackagingService.php
+|   |   |   |   PaymentService.php
+|   |   |   |   ProductSampleService.php
+|   |   |   |   ProductService.php
+|   |   |   |   PromotionService.php
+|   |   |   |   QuoteService.php
+|   |   |   |   ReturnService.php
+|   |   |   |   SalesOrderService.php
+|   |   |   |   SearchService.php
+|   |   |   |   VisitService.php
+|   |   |   |   
+|   |   |   \---Epicor
+|   |   |           EpicorClient.php
+|   |   |           
 |   |   \---Support
 |   |           ApiResponse.php
 |   |           GeoHelper.php
@@ -179,9 +226,43 @@ C:.
 |   |   |       2026_09_12_030500_create_invoices_and_payments_tables.php
 |   |   |       2026_09_12_030600_create_expenses_and_returns_tables.php
 |   |   |       2026_09_12_030700_create_notifications_audit_integration_tables.php
+|   |   |       2026_09_22_000001_add_npd_support_to_sales_order_lines.php
+|   |   |       2026_09_22_000002_create_task_master_data_and_link_followups.php
+|   |   |       2026_09_22_000003_add_credit_hold_to_customers_table.php
+|   |   |       2026_09_22_000004_add_ktp_to_leads_table.php
+|   |   |       2026_09_22_000005_add_scoring_to_leads_table.php
+|   |   |       2026_09_22_000006_add_mandatory_to_tasks_table.php
+|   |   |       2026_09_22_000007_add_lead_id_to_sales_orders_table.php
+|   |   |       2026_09_23_000001_create_product_samples_and_feedbacks_tables.php
+|   |   |       2026_09_24_000001_add_task_columns_to_leads_table.php
+|   |   |       2026_09_24_000002_remap_lead_stage_values.php
+|   |   |       2026_09_28_000001_add_win_loss_and_store_photo_to_leads_table.php
+|   |   |       2026_09_28_000002_create_task_templates_and_lead_tasks_tables.php
+|   |   |       2026_09_28_000003_create_lead_journey_entries_and_link_tasks.php
+|   |   |       2026_09_29_000001_create_product_packagings_and_code_mappings_tables.php
+|   |   |       2026_09_29_000002_create_discount_strata_and_competitors_tables.php
+|   |   |       2026_09_29_000003_create_quotes_tables.php
+|   |   |       2026_09_29_000004_add_kg_conversion_and_destination_to_orders.php
+|   |   |       2026_09_30_000001_add_sales_type_lead_closure_and_delegations.php
+|   |   |       2026_10_01_000001_add_status_customer_and_customer_link_to_leads.php
+|   |   |       2026_10_02_000001_add_product_group_and_batch_to_product_samples.php
+|   |   |       2026_10_02_000002_add_delivery_status_to_product_samples.php
+|   |   |       2026_10_02_000003_add_product_group_qty_storage_to_sample_feedbacks.php
+|   |   |       2026_10_02_000004_add_payment_term_to_quotes.php
+|   |   |       2026_10_02_000005_add_cascading_discounts_to_quote_lines.php
+|   |   |       2026_10_03_000001_split_address_and_add_lead_source_to_leads.php
+|   |   |       2026_10_03_000002_add_sales_notes_to_customers.php
+|   |   |       2026_10_04_000001_simplify_b2b_task_set_to_four_stages.php
+|   |   |       2026_10_04_000002_add_reason_code_to_lead_tasks.php
+|   |   |       2026_10_05_000001_add_moq_kg_to_products.php
+|   |   |       2026_10_06_000001_add_product_group_to_products.php
+|   |   |       2026_10_07_000001_add_revision_to_products.php
+|   |   |       2026_10_08_000001_make_visits_support_leads.php
+|   |   |       2026_10_09_000001_remove_negotiation_action_from_tasks.php
 |   |   |       
 |   |   \---seeders
 |   |           DatabaseSeeder.php
+|   |           DemoPackagingSeeder.php
 |   |           
 |   +---public
 |   |   |   .htaccess
@@ -190,8 +271,15 @@ C:.
 |   |   |   robots.txt
 |   |   |   
 |   |   \---storage
-|   |           .gitignore
-|   |           
+|   |       |   .gitignore
+|   |       |   
+|   |       \---leads
+|   |           +---27
+|   |           |       N7YX1LQyWg6tKrGPkSl73ID4N5ITsGHOPxfNebJl.jpg
+|   |           |       
+|   |           \---28
+|   |                   VxForELE4LWyJkXMD3Dh1epzCFaZAbbqek6A3YeY.jpg
+|   |                   
 |   +---resources
 |   |   +---css
 |   |   |       app.css
@@ -215,8 +303,15 @@ C:.
 |   |   |   |       .gitignore
 |   |   |   |       
 |   |   |   \---public
-|   |   |           .gitignore
-|   |   |           
+|   |   |       |   .gitignore
+|   |   |       |   
+|   |   |       \---leads
+|   |   |           +---27
+|   |   |           |       N7YX1LQyWg6tKrGPkSl73ID4N5ITsGHOPxfNebJl.jpg
+|   |   |           |       
+|   |   |           \---28
+|   |   |                   VxForELE4LWyJkXMD3Dh1epzCFaZAbbqek6A3YeY.jpg
+|   |   |                   
 |   |   +---framework
 |   |   |   |   .gitignore
 |   |   |   |   
@@ -230,11 +325,20 @@ C:.
 |   |   |   |       .gitignore
 |   |   |   |       
 |   |   |   +---testing
-|   |   |   |       .gitignore
-|   |   |   |       
+|   |   |   |   |   .gitignore
+|   |   |   |   |   
+|   |   |   |   \---disks
+|   |   |   |       \---public
+|   |   |   |           \---leads
+|   |   |   |               \---1
+|   |   |   |                       a1lfZN77pwpfa8Vb2DnmGkCan2wFI1o7rxKkSNjV.jpg
+|   |   |   |                       
 |   |   |   \---views
 |   |   |           .gitignore
+|   |   |           13f9e7c0dcc8676f31b8aa05f5225db4.php
 |   |   |           73225ec48bb77eca7f052f17905ddba0.php
+|   |   |           a753c7286ff073fee6ca1b0e581610f5.php
+|   |   |           c0b5bd0c48f603fab2dc359ae01838c4.php
 |   |   |           
 |   |   \---logs
 |   |           .gitignore
@@ -244,96 +348,168 @@ C:.
 |   |   |   TestCase.php
 |   |   |   
 |   |   +---Feature
+|   |   |       ActionConcludesTaskTest.php
 |   |   |       AuthApiTest.php
+|   |   |       BrandAwarenessCustomerTest.php
+|   |   |       CascadingDiscountTest.php
+|   |   |       CustomerActivityAndNotesTest.php
+|   |   |       DashboardArSummaryTest.php
 |   |   |       ExampleTest.php
+|   |   |       FunctionalRevisionOct2026Test.php
+|   |   |       LeadAddressFieldsTest.php
 |   |   |       LeadApiTest.php
+|   |   |       LeadWorkflowTest.php
+|   |   |       ManualConclusionRevisionTest.php
+|   |   |       MoqTest.php
 |   |   |       OrderApiTest.php
 |   |   |       PaymentApiTest.php
+|   |   |       ProductGroupFilterTest.php
+|   |   |       ProductRegistrationTest.php
+|   |   |       ProductRevisionTest.php
+|   |   |       ProductSampleDeliveryTest.php
+|   |   |       ProductSampleFieldsTest.php
+|   |   |       QuotationTest.php
+|   |   |       QuotePaymentTermTest.php
+|   |   |       RoleDelegationTest.php
+|   |   |       SampleFeedbackFieldsTest.php
+|   |   |       SampleFeedbackStatusTest.php
+|   |   |       StatusCustomerTest.php
+|   |   |       TaskAssigneeNameTest.php
 |   |   |       VisitCheckinTest.php
 |   |   |       
 |   |   \---Unit
 |   |           ExampleTest.php
-|   \---vendor (kebanyakan, kalo mau liat bilang aja)
-|       |   autoload.php
 +---frontend
 |   |   .env
 |   |   .env.example
+|   |   .env.mobile
 |   |   .gitignore
 |   |   .oxlintrc.json
+|   |   capacitor.config.json
 |   |   index.html
 |   |   package-lock.json
 |   |   package.json
 |   |   README.md
 |   |   vite.config.js
+|   |   vitest.config.js
+|   |   
+|   +---android
 |   +---public
 |   |       favicon.svg
 |   |       icons.svg
 |   |       mazzoni-logo.png
 |   |       
-|   \---src
-|       |   App.jsx
-|       |   index.css
-|       |   main.jsx
-|       |   
-|       +---api
-|       |       auth.js
-|       |       client.js
-|       |       index.js
-|       |       
-|       +---assets
-|       |       hero.png
-|       |       react.svg
-|       |       vite.svg
-|       |       
-|       +---components
-|       |       BottomNav.jsx
-|       |       GlobalSearch.jsx
-|       |       PhoneFrame.jsx
-|       |       PhotoUpload.jsx
-|       |       ui.jsx
-|       |       
-|       +---context
-|       |       AuthContext.jsx
-|       |       UiContext.jsx
-|       |       
-|       +---hooks
-|       |       useDebounce.js
-|       |       useDraftSync.js
-|       |       useGeolocation.js
-|       |       useOnline.js
-|       |       
-|       +---lib
-|       |       drafts.js
-|       |       format.js
-|       |       uuid.js
-|       |       
-|       +---pages
-|       |       ArReport.jsx
-|       |       Canvassing.jsx
-|       |       Checkin.jsx
-|       |       CustomerDetail.jsx
-|       |       Customers.jsx
-|       |       Expenses.jsx
-|       |       Home.jsx
-|       |       Leads.jsx
-|       |       Login.jsx
-|       |       NewExpense.jsx
-|       |       NewLead.jsx
-|       |       NewOrder.jsx
-|       |       NewReturn.jsx
-|       |       Orders.jsx
-|       |       Payment.jsx
-|       |       Promo.jsx
-|       |       Returns.jsx
-|       |       Stock.jsx
-|       |       Tracker.jsx
-|       |       VisitMode.jsx
-|       |       Visits.jsx
-|       |       
-|       \---styles
-|               prototype.css
-|               
+|   +---src
+|   |   |   App.jsx
+|   |   |   index.css
+|   |   |   main.jsx
+|   |   |   
+|   |   +---api
+|   |   |       auth.js
+|   |   |       client.js
+|   |   |       index.js
+|   |   |       
+|   |   +---assets
+|   |   |       hero.png
+|   |   |       react.svg
+|   |   |       vite.svg
+|   |   |       
+|   |   +---components
+|   |   |   |   BottomNav.jsx
+|   |   |   |   CheckinMap.jsx
+|   |   |   |   ConclusionFields.jsx
+|   |   |   |   Field.jsx
+|   |   |   |   GlobalSearch.jsx
+|   |   |   |   LeadCard.jsx
+|   |   |   |   LeadTaskPanel.jsx
+|   |   |   |   LocationPicker.jsx
+|   |   |   |   PhoneFrame.jsx
+|   |   |   |   PhotoUpload.jsx
+|   |   |   |   ProductGroupField.jsx
+|   |   |   |   ui.jsx
+|   |   |   |   VisitsMap.jsx
+|   |   |   |   
+|   |   |   \---master
+|   |   |           CodeMapAdmin.jsx
+|   |   |           PackagingAdmin.jsx
+|   |   |           StrataAdmin.jsx
+|   |   |           TeamAdmin.jsx
+|   |   |           
+|   |   +---context
+|   |   |       AuthContext.jsx
+|   |   |       UiContext.jsx
+|   |   |       
+|   |   +---hooks
+|   |   |       useDebounce.js
+|   |   |       useDraftAutoSync.js
+|   |   |       useDraftSync.js
+|   |   |       useGeolocation.js
+|   |   |       useOnline.js
+|   |   |       
+|   |   +---lib
+|   |   |       drafts.js
+|   |   |       draftSync.js
+|   |   |       format.js
+|   |   |       geocode.js
+|   |   |       mapIcons.js
+|   |   |       packaging.js
+|   |   |       roles.js
+|   |   |       uuid.js
+|   |   |       wilayah.js
+|   |   |       
+|   |   +---pages
+|   |   |       Activities.jsx
+|   |   |       ArReport.jsx
+|   |   |       Canvassing.jsx
+|   |   |       Checkin.jsx
+|   |   |       CustomerDetail.jsx
+|   |   |       Customers.jsx
+|   |   |       Delegations.jsx
+|   |   |       Expenses.jsx
+|   |   |       Home.jsx
+|   |   |       Leads.jsx
+|   |   |       Login.jsx
+|   |   |       MasterData.jsx
+|   |   |       NewExpense.jsx
+|   |   |       NewLead.jsx
+|   |   |       NewOrder.jsx
+|   |   |       NewReturn.jsx
+|   |   |       NewSample.jsx
+|   |   |       NewSampleFeedback.jsx
+|   |   |       NooReport.jsx
+|   |   |       Orders.jsx
+|   |   |       Payment.jsx
+|   |   |       Promo.jsx
+|   |   |       QuoteForm.jsx
+|   |   |       Quotes.jsx
+|   |   |       Returns.jsx
+|   |   |       Stock.jsx
+|   |   |       Tracker.jsx
+|   |   |       VisitMode.jsx
+|   |   |       Visits.jsx
+|   |   |       
+|   |   \---styles
+|   |           prototype.css
+|   |           
+|   \---tests
+|           agingBuckets.test.jsx
+|           apiClient.test.jsx
+|           customerDetailActivity.test.jsx
+|           draftSync.test.jsx
+|           leadTaskPanel.test.jsx
+|           locationPicker.test.jsx
+|           locationPickerNestedForm.test.jsx
+|           newSample.test.jsx
+|           newSampleFeedback.test.jsx
+|           packaging.test.jsx
+|           pages.test.jsx
+|           quotePaymentTerm.test.jsx
+|           quotes.test.jsx
+|           roles.test.jsx
+|           setup.js
+|           visits.test.jsx
+|           wilayah.test.jsx
+|           
 \---scripts
         backup-version.ps1
         bump-version.ps1
-        

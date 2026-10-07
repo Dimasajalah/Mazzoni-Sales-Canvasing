@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Models\Lead;
+use App\Services\DelegationService;
 use App\Services\SalesOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class SalesOrderController extends Controller
 {
@@ -27,6 +30,11 @@ class SalesOrderController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        // Sales Dealmaker tidak boleh membuat order (poin 11): prospek yang sudah Win didelegasikan ke Sales Order
+        if (! $request->user()->canOrder()) {
+            return ApiResponse::error('Sales Dealmaker tidak dapat membuat order. Delegasikan prospek yang sudah Win ke Sales Order.', null, 403);
+        }
+
         $data = $request->validate([
             'customer_id' => ['required', 'exists:customers,id'],
             'lead_id' => ['nullable', 'exists:leads,id'],
@@ -34,6 +42,9 @@ class SalesOrderController extends Controller
             'order_date' => ['nullable', 'date'],
             'discount' => ['nullable', 'numeric', 'min:0'],
             'promo_id' => ['nullable', 'exists:promotions,id'],
+            // Tujuan order: HO atau Distributor (dipilih salesman)
+            'destination' => ['nullable', Rule::in(['HO', 'DISTRIBUTOR'])],
+            'distributor_customer_id' => ['required_if:destination,DISTRIBUTOR', 'nullable', 'exists:customers,id', 'different:customer_id'],
             'notes' => ['nullable', 'string'],
             'client_uuid' => ['nullable', 'uuid'],
             'lines' => ['required', 'array', 'min:1'],
@@ -47,7 +58,11 @@ class SalesOrderController extends Controller
             // Wajib diisi kalau baris ini NPD
             'lines.*.custom_part_name' => ['required_if:lines.*.is_custom,true', 'nullable', 'string', 'max:255'],
 
-            'lines.*.qty' => ['required', 'numeric', 'gt:0'],
+            // Qty biasa ATAU qty Kg (dikonversi ke pcs oleh server berdasarkan gramasi kemasan)
+            'lines.*.qty' => ['required_without:lines.*.qty_kg', 'nullable', 'numeric', 'gt:0'],
+            'lines.*.qty_kg' => ['nullable', 'numeric', 'gt:0'],
+            'lines.*.gramasi_gr' => ['nullable', 'numeric', 'gt:0'],
+            'lines.*.packaging_id' => ['nullable', 'exists:product_packagings,id'],
             'lines.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'lines.*.discount' => ['nullable', 'numeric', 'min:0'],
             'lines.*.uom' => ['nullable', 'string'],
@@ -74,6 +89,12 @@ class SalesOrderController extends Controller
                     422
                 );
             }
+        }
+
+        // Order atas prospek hanya oleh pemilik atau sales penerima delegasi (mencegah menandai Win prospek orang lain)
+        if (! empty($data['lead_id'])
+            && ! app(DelegationService::class)->canOrderForLead($request->user(), Lead::findOrFail($data['lead_id']))) {
+            return ApiResponse::error('Anda tidak berhak membuat order atas prospek ini', null, 403);
         }
 
         $header = collect($data)->except('lines')->all();

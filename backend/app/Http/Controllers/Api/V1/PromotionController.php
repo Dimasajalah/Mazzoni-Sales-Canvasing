@@ -42,7 +42,7 @@ class PromotionController extends Controller
 
         return ApiResponse::success(
             $this->promotionService->recordOffer($data, $request->user()),
-            'Penawaran promo dicatat',
+            'Quotation dicatat',
             201
         );
     }

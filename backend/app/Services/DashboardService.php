@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Customer;
 use App\Models\Expense;
-use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Promotion;
 use App\Models\ReturnRequest;
@@ -16,8 +15,10 @@ use Carbon\Carbon;
 
 class DashboardService
 {
-    public function __construct(private readonly ARDataProviderInterface $arProvider)
-    {
+    public function __construct(
+        private readonly ARDataProviderInterface $arProvider,
+        private readonly LeadTaskService $leadTaskService,
+    ) {
     }
 
     public function summary(User $user): array
@@ -25,11 +26,8 @@ class DashboardService
         $aging = $this->arProvider->agingSummary();
         $topAging = $this->arProvider->agingInvoices()->take(10)->values();
 
-        $pipeline = Lead::query()
-            ->selectRaw('stage, COUNT(*) as total')
-            ->when($user->role === 'sales', fn ($q) => $q->where('salesperson_id', $user->id))
-            ->groupBy('stage')
-            ->pluck('total', 'stage');
+        // Pipeline 7 langkah (Prospek, Lead, Brand Awareness, Sampling, Quote, Win, Lose)
+        $pipeline = $this->leadTaskService->pipelineCounts($user);
 
         $today = Carbon::today();
 
@@ -58,6 +56,7 @@ class DashboardService
             'ar' => $aging,
             'top_aging' => $topAging,
             'pipeline' => $pipeline,
+            'activities' => $this->leadTaskService->summary($user),
             'active_promos' => Promotion::where('active', true)
                 ->where(function ($q) use ($today) {
                     $q->whereNull('end_date')->orWhere('end_date', '>=', $today);
@@ -66,6 +65,11 @@ class DashboardService
                 ->limit(5)
                 ->get(),
             'unread_notifications' => $user->notifications()->whereNull('read_at')->count(),
+            // Delegasi yang menunggu: masuk (untuk Sales Order) dan keluar (untuk Dealmaker)
+            'delegations' => [
+                'incoming_pending' => \App\Models\LeadDelegation::where('to_user_id', $user->id)->where('status', 'PENDING')->count(),
+                'outgoing_pending' => \App\Models\LeadDelegation::where('from_user_id', $user->id)->where('status', 'PENDING')->count(),
+            ],
         ];
     }
 }

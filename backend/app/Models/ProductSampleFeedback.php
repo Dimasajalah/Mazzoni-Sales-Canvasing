@@ -10,10 +10,11 @@ class ProductSampleFeedback extends Model
 {
     protected $table = 'product_sample_feedbacks';
     protected $fillable = [
-        'product_sample_id', 'customer_id', 'lead_id', 'salesperson_id',
-        'version_sample', 'batch_number', 'feedback_type', 'revision_types', 'notes',
+        'product_sample_id', 'customer_id', 'lead_id', 'lead_task_id', 'salesperson_id',
+        'product_group', 'qty', 'version_sample', 'batch_number', 'storage_location',
+        'feedback_type', 'revision_types', 'notes',
     ];
-
+    
     protected function casts(): array
     {
         return [

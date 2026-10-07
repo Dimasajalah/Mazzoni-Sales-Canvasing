@@ -16,7 +16,7 @@ return [
         env('FRONTEND_URL', 'http://localhost:5173'),
         'http://127.0.0.1:5173',
         'http://localhost:5173',
-        'http://192.168.2.39:5173',
+        'http://192.168.2.27:5173',
         'http://localhost',        // ganti dari https://localhost
         'capacitor://localhost',
     ],

@@ -1,245 +1,286 @@
 // frontend/src/components/LocationPicker.jsx
-import { useCallback, useEffect, useRef, useState } from "react";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
-import { GOOGLE_MAPS_LIBRARIES } from "../lib/googleMaps";
+// Peta lokasi berbasis Google Maps.
+//  - pin diam di tengah, peta digeser di bawahnya (untuk koreksi halus setelah alamat diketik)
+//  - showSearch=false (dipakai New Lead): kotak pencarian sendiri disembunyikan karena alamat
+//    sudah diketik di field terpisah — peta cuma pratinjau + koreksi
+//  - onAddressChange(label, components) dipanggil setiap reverse geocoding selesai (geser/pencarian)
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { reverseGeocode, searchAddress } from '../lib/geocode'
+import { loadGoogleMaps, onMapsAuthFailure } from '../lib/googleMaps'
 
-const containerStyle = { width: "100%", height: "400px", borderRadius: "14px 14px 0 0" };
-const defaultCenter = { lat: -6.2, lng: 106.816666 }; // default: Jakarta
+const DEFAULT_CENTER = { lat: -7.2575, lng: 112.7521 } // Surabaya
+const EPS = 1e-6
+const same = (a, b) => Boolean(a && b) && Math.abs(a.lat - b.lat) < EPS && Math.abs(a.lng - b.lng) < EPS
 
-const mapOptions = {
-  mapTypeControl: true,
-  fullscreenControl: true,
-  streetViewControl: true,
-  zoomControl: false,
-  clickableIcons: true,
-  keyboardShortcuts: true,
-};
+export default function LocationPicker({ value, onChange, onAddressChange, height = 300, showSearch = true }) {
+  const initial = value || DEFAULT_CENTER
+  const [position, setPosition] = useState(initial)
+  // Lokasi dianggap dipilih bila datang dari parent (GPS/geocoding alamat) atau peta digeser/dicari.
+  // Titik default hanya tampilan awal: tidak dicari alamatnya dan tidak dikirim ke parent.
+  const [chosen, setChosen] = useState(Boolean(value))
+  const [address, setAddress] = useState('')
+  const [addressState, setAddressState] = useState('idle') // idle | loading | error
+  const [dragging, setDragging] = useState(false)
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const [searchMsg, setSearchMsg] = useState('')
+  const [mapError, setMapError] = useState('')
+  const [attempt, setAttempt] = useState(0)
 
-export default function LocationPicker({ value, onChange, onAddressChange }) {
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: GOOGLE_MAPS_LIBRARIES,
-  });
+  const containerRef = useRef(null)
+  const mapRef = useRef(null)
+  const lastTarget = useRef(initial) // posisi terakhir yang SUDAH diketahui komponen ini
+  const reverseTimer = useRef(null)
+  const reverseSeq = useRef(0)
+  const movedRef = useRef(() => {})
 
-  const [position, setPosition] = useState(value || defaultCenter);
-  const [mapRef, setMapRef] = useState(null);
-  const [query, setQuery] = useState("");
-  const [predictions, setPredictions] = useState([]);
-  const [address, setAddress] = useState("");
-  const [focused, setFocused] = useState(false);
-  const autocompleteServiceRef = useRef(null);
-  const geocoderRef = useRef(null);
-
-  useEffect(() => {
-    if (value && (value.lat !== position.lat || value.lng !== position.lng)) {
-      setPosition(value);
-      if (mapRef) mapRef.panTo(value);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
-
-  useEffect(() => {
-    if (isLoaded && window.google) {
-      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
-      geocoderRef.current = new window.google.maps.Geocoder();
-    }
-  }, [isLoaded]);
-
-  const reverseGeocode = useCallback((lat, lng) => {
-    if (!geocoderRef.current) return;
-    geocoderRef.current.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === "OK" && results?.[0]) {
-        const formatted = results[0].formatted_address;
-        setAddress(formatted);
-        onAddressChange?.(formatted);
-      }
-    });
-  }, [onAddressChange]);
-
-  useEffect(() => {
-    if (isLoaded) reverseGeocode(position.lat, position.lng);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded]);
-
-  const updatePosition = useCallback(
-    (lat, lng) => {
-      const next = { lat, lng };
-      setPosition(next);
-      onChange?.(next);
-      reverseGeocode(lat, lng);
+  const applyAddress = useCallback(
+    (label, components) => {
+      setAddress(label)
+      onAddressChange?.(label, components)
     },
-    [onChange, reverseGeocode]
-  );
+    [onAddressChange],
+  )
 
-  const handleMapClick = useCallback(
-    (e) => updatePosition(e.latLng.lat(), e.latLng.lng()),
-    [updatePosition]
-  );
+  const lookupAddress = useCallback(
+    (pos) => {
+      clearTimeout(reverseTimer.current)
+      const seq = ++reverseSeq.current
+      setAddressState('loading')
+      reverseTimer.current = setTimeout(async () => {
+        try {
+          const result = await reverseGeocode(pos.lat, pos.lng)
+          if (seq !== reverseSeq.current) return
+          applyAddress(result.label, result)
+          setAddressState('idle')
+        } catch {
+          if (seq !== reverseSeq.current) return
+          setAddressState('error')
+        }
+      }, 700)
+    },
+    [applyAddress],
+  )
 
-  const handleMarkerDragEnd = useCallback(
-    (e) => updatePosition(e.latLng.lat(), e.latLng.lng()),
-    [updatePosition]
-  );
+  useEffect(() => () => clearTimeout(reverseTimer.current), [])
 
-  const handleQueryChange = (text) => {
-    setQuery(text);
-    if (!text || !autocompleteServiceRef.current) {
-      setPredictions([]);
-      return;
+  // Alamat untuk posisi awal (hanya bila parent memang memberi lokasi)
+  useEffect(() => {
+    if (value) lookupAddress(initial)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Peta dipindah dari LUAR (prop `value` berubah, mis. hasil geocode alamat yang baru diketik).
+  const handleTarget = useCallback(
+    (pos) => {
+      setChosen(true)
+      setPosition(pos)
+      onChange?.(pos)
+      lookupAddress(pos)
+    },
+    [onChange, lookupAddress],
+  )
+
+  // Peta digeser/di-zoom oleh PENGGUNA.
+  const handleMoved = useCallback(
+    (pos) => {
+      setDragging(false)
+      setChosen(true)
+      setPosition(pos)
+      onChange?.(pos)
+      lookupAddress(pos)
+    },
+    [onChange, lookupAddress],
+  )
+
+  useEffect(() => {
+    movedRef.current = handleMoved
+  })
+
+  // Muat Google Maps lalu pasang peta.
+  useEffect(() => {
+    let cancelled = false
+    let listeners = []
+    setMapError('')
+
+    loadGoogleMaps()
+      .then((maps) => {
+        if (cancelled || !containerRef.current) return
+        const map = new maps.Map(containerRef.current, {
+          center: lastTarget.current,
+          zoom: 16,
+          gestureHandling: 'greedy',
+          disableDefaultUI: true,
+          zoomControl: true,
+          // Tombol zoom di kanan atas supaya tidak tertutup tombol "kembali ke GPS" (kanan bawah).
+          ...(maps.ControlPosition ? { zoomControlOptions: { position: maps.ControlPosition.RIGHT_TOP } } : {}),
+          clickableIcons: false,
+        })
+        mapRef.current = map
+        listeners = [
+          map.addListener('dragstart', () => setDragging(true)),
+          // `idle` juga menyala setelah pindah terprogram dan saat peta pertama kali tampil:
+          // hanya posisi yang BERBEDA dari yang sudah diketahui dianggap geseran pengguna.
+          map.addListener('idle', () => {
+            setDragging(false)
+            const c = map.getCenter()
+            const pos = { lat: c.lat(), lng: c.lng() }
+            if (same(lastTarget.current, pos)) return
+            lastTarget.current = pos
+            movedRef.current(pos)
+          }),
+        ]
+      })
+      .catch((err) => {
+        if (!cancelled) setMapError(err?.message || 'Peta tidak dapat dimuat')
+      })
+
+    const offAuth = onMapsAuthFailure(() =>
+      setMapError('Kunci Google Maps ditolak. Periksa API yang diaktifkan dan pembatasan kunci di Google Cloud.'),
+    )
+
+    return () => {
+      cancelled = true
+      listeners.forEach((l) => l.remove())
+      offAuth()
+      mapRef.current = null
     }
-    autocompleteServiceRef.current.getPlacePredictions(
-      { input: text, componentRestrictions: { country: "id" } },
-      (results) => setPredictions(results || [])
-    );
-  };
+  }, [attempt])
 
-  const handleSelectPrediction = (prediction) => {
-    if (!geocoderRef.current) return;
-    geocoderRef.current.geocode({ placeId: prediction.place_id }, (results, status) => {
-      if (status !== "OK" || !results?.[0]) return;
-      const loc = results[0].geometry.location;
-      const lat = loc.lat();
-      const lng = loc.lng();
-      updatePosition(lat, lng);
-      if (mapRef) {
-        mapRef.panTo({ lat, lng });
-        mapRef.setZoom(17);
-      }
-      onAddressChange?.(prediction.description);
-      setQuery("");
-      setPredictions([]);
-    });
-  };
+  useEffect(() => {
+    if (!value || same(lastTarget.current, value)) return
+    lastTarget.current = { lat: value.lat, lng: value.lng }
+    mapRef.current?.setCenter(value)
+    handleTarget(value)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value?.lat, value?.lng])
 
-  if (!isLoaded) return <div>Loading map...</div>;
+  const doSearch = async (e) => {
+    e?.preventDefault()
+    setSearchMsg('')
+    if (query.trim().length < 3) {
+      setSearchMsg('Ketik minimal 3 huruf')
+      return
+    }
+    setSearching(true)
+    try {
+      const rows = await searchAddress(query)
+      setResults(rows)
+      if (!rows.length) setSearchMsg('Alamat tidak ditemukan. Coba kata kunci lain.')
+    } catch (err) {
+      setResults([])
+      setSearchMsg(err.message || 'Pencarian gagal')
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  const pick = (row) => {
+    const pos = { lat: row.lat, lng: row.lng }
+    lastTarget.current = pos
+    mapRef.current?.setCenter(pos)
+    mapRef.current?.setZoom(17)
+    applyAddress(row.label, row)
+    setAddressState('idle')
+    setResults([])
+    setQuery('')
+    setChosen(true)
+    setPosition(pos)
+    onChange?.(pos)
+  }
+
+  const recenter = () => {
+    if (!value) return
+    lastTarget.current = { lat: value.lat, lng: value.lng }
+    mapRef.current?.setCenter(value)
+    mapRef.current?.setZoom(17)
+  }
 
   return (
-    <div style={{ marginBottom: 12 }}>
-      {/* Search box */}
-      <div style={{ position: "relative", marginBottom: 10 }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            background: "#F8FAFD",
-            border: `1.5px solid ${focused ? "var(--orange)" : "var(--stroke)"}`,
-            borderRadius: 12,
-            padding: "11px 14px",
-            transition: "border-color .15s",
-          }}
-        >
-          <span style={{ opacity: 0.5 }}>🔍</span>
-          <input
-            type="text"
-            placeholder="Cari alamat…"
-            value={query}
-            onChange={(e) => handleQueryChange(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setTimeout(() => setFocused(false), 150)}
-            style={{
-              flex: 1,
-              border: "none",
-              outline: "none",
-              background: "none",
-              fontSize: 13,
-              fontFamily: "inherit",
-              color: "var(--text)",
-            }}
-          />
-        </div>
-
-        {predictions.length > 0 && (
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              top: "calc(100% + 4px)",
-              zIndex: 30,
-              background: "#fff",
-              border: "1px solid var(--stroke)",
-              borderRadius: 12,
-              boxShadow: "0 8px 24px rgba(16,32,64,.12)",
-              maxHeight: 220,
-              overflowY: "auto",
-            }}
-          >
-            {predictions.map((p) => (
-              <div
-                key={p.place_id}
-                onClick={() => handleSelectPrediction(p)}
-                role="button"
-                tabIndex={0}
-                style={{
-                  padding: "11px 14px",
-                  fontSize: 12.5,
-                  borderBottom: "1px solid var(--stroke)",
-                  cursor: "pointer",
-                }}
-              >
-                {p.description}
-              </div>
-            ))}
+    <div className="lp">
+      {showSearch && (
+        <>
+          {/* Sengaja BUKAN <form>: dipakai di dalam form halaman pemanggil, dan form-di-dalam-form
+              tidak valid di HTML — tombol "Cari" bisa malah men-submit form terluar. */}
+          <div className="lp-search">
+            <input
+              type="search"
+              placeholder="Cari alamat lalu tekan Cari…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  doSearch()
+                }
+              }}
+              enterKeyHint="search"
+            />
+            <button type="button" className="btn sm" disabled={searching} onClick={doSearch}>
+              {searching ? '…' : 'Cari'}
+            </button>
           </div>
+
+          {results.length > 0 && (
+            <div className="lp-results">
+              {results.map((r, i) => (
+                <div key={`${r.lat}-${r.lng}-${i}`} className="lp-result" role="button" tabIndex={0} onClick={() => pick(r)}>
+                  {r.label}
+                </div>
+              ))}
+            </div>
+          )}
+          {searchMsg && <div className="muted lp-msg">{searchMsg}</div>}
+        </>
+      )}
+
+      <div className="lp-map" style={{ height }}>
+        <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
+
+        {mapError ? (
+          <div
+            className="muted lp-msg"
+            style={{ position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', gap: 8, padding: 16, textAlign: 'center', background: '#F7F9FC' }}
+          >
+            <div>{mapError}</div>
+            <button type="button" className="btn ghost sm" style={{ justifySelf: 'center' }} onClick={() => setAttempt((a) => a + 1)}>
+              Muat ulang peta
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className={`lp-pin${dragging ? ' lifted' : ''}`} aria-hidden="true">
+              📍
+            </div>
+
+            {value && (
+              <button type="button" className="lp-recenter" onClick={recenter} aria-label="Kembali ke lokasi GPS">
+                🎯
+              </button>
+            )}
+          </>
         )}
       </div>
 
-      {/* Peta + bar koordinat menyatu di bawahnya */}
-      <div
-        style={{
-          borderRadius: 14,
-          overflow: "hidden",
-          border: "1.5px solid var(--stroke)",
-        }}
-      >
-        <GoogleMap
-          mapContainerStyle={containerStyle}
-          center={position}
-          zoom={16}
-          options={mapOptions}
-          onClick={handleMapClick}
-          onLoad={(map) => setMapRef(map)}
-        >
-          <Marker position={position} draggable onDragEnd={handleMarkerDragEnd} />
-        </GoogleMap>
-
-        <div
-          style={{
-            background: "#111827",
-            color: "#fff",
-            fontSize: 11,
-            fontFamily: "monospace",
-            padding: "6px 12px",
-            textAlign: "center",
-            letterSpacing: 0.2,
-          }}
-        >
-          {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
-        </div>
-      </div>
-
-      {/* Kartu alamat — di bawah peta, gaya Grab/Gojek */}
-      <div
-        style={{
-          marginTop: 14,
-          background: "var(--card)",
-          border: "1.5px solid var(--orange)",
-          borderRadius: 12,
-          padding: "12px 14px",
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 10,
-          boxShadow: "0 4px 14px rgba(238,106,10,.12)",
-        }}
-      >
-        <span style={{ fontSize: 18, lineHeight: "20px" }}>📍</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>
-            {address || "Menentukan alamat…"}
+      <div className="lp-card">
+        <span className="lp-card-ic">📌</span>
+        <div className="lp-card-body">
+          <div className="lp-addr">
+            {addressState === 'loading'
+              ? 'Mencari alamat…'
+              : address ||
+                (addressState === 'error'
+                  ? 'Alamat tidak tersedia — isi manual di kolom Alamat.'
+                  : showSearch
+                    ? 'Geser peta atau cari alamat untuk memilih lokasi'
+                    : 'Isi Alamat di atas untuk memunculkan peta')}
+          </div>
+          <div className="lp-coord muted">
+            {chosen ? `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}` : 'Belum ada lokasi dipilih'}
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

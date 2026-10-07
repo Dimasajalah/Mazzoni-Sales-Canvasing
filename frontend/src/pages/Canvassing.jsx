@@ -1,64 +1,63 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+// frontend/src/pages/Canvassing.jsx
+import { useCallback, useEffect, useState } from 'react'
 import { getLeads } from '../api'
-import { ListItem, Screen, TopBar } from '../components/ui'
+import { LeadCard } from '../components/LeadCard'
+import LeadTaskPanel from '../components/LeadTaskPanel'
+import { Screen, TopBar } from '../components/ui'
 import { useUi } from '../context/UiContext'
-import { listOf, stageColor } from '../lib/format'
+import { listOf } from '../lib/format'
 
 export default function Canvassing() {
   const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
   const { showToast, openSheet, closeSheet } = useUi()
-  const nav = useNavigate()
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await getLeads({ per_page: 100 })
+      setItems(listOf(data).filter((l) => l.win_loss === 'OPEN'))
+    } catch (e) {
+      showToast(e.message, { warn: true })
+    } finally {
+      setLoading(false)
+    }
+  }, [showToast])
 
   useEffect(() => {
-    getLeads({})
-      .then((d) => setItems(listOf(d)))
-      .catch((e) => showToast(e.message, { warn: true }))
-  }, [showToast])
+    load()
+  }, [load])
 
   return (
     <Screen>
       <TopBar title="Canvassing / Follow-up" backTo="/home" />
-      <p className="sub">Tindak lanjut lead aktif</p>
-      {items.map((l) => (
-        <ListItem
-          key={l.id}
-          barColor={stageColor(l.stage)}
-          title={l.business_name || l.name}
-          subtitle={`${l.stage} · ${l.phone || l.address || '—'}`}
-          onClick={() =>
-            openSheet('Follow-up', (
-              <div>
-                <div style={{ fontWeight: 800 }}>{l.business_name}</div>
-                <p className="muted" style={{ fontSize: 12 }}>
-                  {l.owner_name} · {l.phone}
-                </p>
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ marginBottom: 8 }}
-                  onClick={() => {
-                    closeSheet()
-                    nav('/visits')
-                  }}
-                >
-                  Jadwalkan Visit
-                </button>
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={() => {
-                    closeSheet()
-                    nav('/orders/new')
-                  }}
-                >
-                  Buat Penawaran / Order
-                </button>
-              </div>
-            ))
-          }
-        />
-      ))}
+      <p className="sub">Tindak lanjut prospek yang masih berjalan</p>
+      {loading ? (
+        <div className="loading-center">Memuat…</div>
+      ) : items.length === 0 ? (
+        <div className="muted" style={{ fontSize: 13 }}>
+          Tidak ada prospek aktif.
+        </div>
+      ) : (
+        items.map((l) => (
+          <LeadCard
+            key={l.id}
+            lead={l}
+            onClick={() =>
+              openSheet(
+                'Follow-up',
+                <LeadTaskPanel
+                  lead={l}
+                  task={l.current_task}
+                  onChanged={load}
+                  onClose={closeSheet}
+                  showToast={showToast}
+                />,
+              )
+            }
+          />
+        ))
+      )}
     </Screen>
   )
 }

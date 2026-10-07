@@ -5,9 +5,11 @@ namespace App\Providers\Data\Staging;
 
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\ProductPackaging;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderLine;
 use App\Providers\Data\Contracts\SalesOrderProviderInterface;
+use App\Services\PackagingService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -56,10 +58,19 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
             $subtotal = 0;
             $normalized = [];
 
-            foreach ($lines as $line) {
+            foreach ($lines as $i => $line) {
                 $isCustom = (bool) ($line['is_custom'] ?? false);
-                $qty = (float) $line['qty'];
                 $discount = (float) ($line['discount'] ?? 0);
+
+                // Baris berbasis Kg: qty pcs dihitung server dari Kg dan gramasi (satu sumber kebenaran)
+                $conv = ['qty_kg' => null, 'gramasi_gr' => null, 'qty_pcs' => null, 'packaging_id' => null];
+                if (! empty($line['qty_kg'])) {
+                    $conv = $this->convertKgLine($line, $i);
+                    $qty = (float) $conv['qty_pcs'];
+                    $line['uom'] = 'PCS';
+                } else {
+                    $qty = (float) $line['qty'];
+                }
 
                 if ($isCustom) {
                     $unitPrice = (float) ($line['unit_price'] ?? 0);
@@ -71,6 +82,7 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
                         'is_custom' => true,
                         'custom_part_name' => $line['custom_part_name'],
                         'qty' => $qty,
+                        ...$conv,
                         'uom' => $line['uom'] ?? 'PCS',
                         'unit_price' => $unitPrice,
                         'discount' => $discount,
@@ -90,6 +102,7 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
                     'is_custom' => false,
                     'custom_part_name' => null,
                     'qty' => $qty,
+                    ...$conv,
                     'uom' => $line['uom'] ?? $product->uom,
                     'unit_price' => $unitPrice,
                     'discount' => $discount,
@@ -125,12 +138,47 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
                 ]);
             }
 
+            // Order dari sebuah prospek => prospek otomatis WIN (Stage QUOTE, Status WIN)
             if (! empty($header['lead_id'])) {
-                \App\Models\Lead::where('id', $header['lead_id'])->update(['stage' => 'WON']);
+                $lead = \App\Models\Lead::find($header['lead_id']);
+                $actor = auth()->user() ?? \App\Models\User::find($order->salesperson_id);
+                if ($lead && $actor) {
+                    app(\App\Services\LeadTaskService::class)
+                        ->markWon($lead, $actor, 'Order '.$order->order_number.' dibuat dari prospek');
+                    app(\App\Services\DelegationService::class)->markOrdered($lead->id, $order);
+                }
             }
 
             return $order->load(['customer', 'salesperson', 'lines.product']);
         });
+    }
+
+    /** @return array{qty_kg:float,gramasi_gr:float,qty_pcs:int,packaging_id:?int} */
+    private function convertKgLine(array $line, int $index): array
+    {
+        $packaging = ! empty($line['packaging_id']) ? ProductPackaging::find($line['packaging_id']) : null;
+
+        if ($packaging && ! empty($line['product_id']) && (int) $packaging->product_id !== (int) $line['product_id']) {
+            throw ValidationException::withMessages([
+                "lines.{$index}.packaging_id" => ['Kemasan tidak sesuai dengan produk yang dipilih.'],
+            ]);
+        }
+
+        $gramasi = $packaging ? (float) $packaging->gramasi_gr : (float) ($line['gramasi_gr'] ?? 0);
+        if ($gramasi <= 0) {
+            throw ValidationException::withMessages([
+                "lines.{$index}.gramasi_gr" => ['Pilih kemasan atau isi gramasi (gr per pcs).'],
+            ]);
+        }
+
+        $kg = (float) $line['qty_kg'];
+
+        return [
+            'qty_kg' => $kg,
+            'gramasi_gr' => $gramasi,
+            'qty_pcs' => app(PackagingService::class)->kgToPcs($kg, $gramasi),
+            'packaging_id' => $packaging?->id,
+        ];
     }
 
     public function tracker(int $id): ?array

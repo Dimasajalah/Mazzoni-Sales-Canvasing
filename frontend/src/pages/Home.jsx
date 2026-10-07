@@ -4,10 +4,22 @@ import { getDashboard } from '../api'
 import { GlobalSearch } from '../components/GlobalSearch'
 import { AgingBuckets, Card, ListItem, Screen } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
+import { canOrder, isManager, roleLabel } from '../lib/roles'
 import { useDraftSync } from '../hooks/useDraftSync'
 import { useOnline } from '../hooks/useOnline'
 import { fmtRp, fmtShort, initials, listOf } from '../lib/format'
 import { useUi } from '../context/UiContext'
+
+const PIPELINE_DEFAULT = [
+  { key: 'prospek', label: 'Prospek', color: 'var(--orange2)' },
+  { key: 'lead', label: 'Lead', color: 'var(--orange)' },
+  { key: 'brand_awareness', label: 'Brand Awareness', color: 'var(--blue)' },
+  { key: 'sampling', label: 'Sampling', color: '#7C5CFC' },
+  { key: 'quote', label: 'Quote', color: 'var(--amber)' },
+  { key: 'win', label: 'Win', color: 'var(--green)' },
+  { key: 'lose', label: 'Lose', color: 'var(--pink)' },
+]
+const SHORT_LABEL = { brand_awareness: 'Brand' }
 
 export default function Home() {
   const { user, logout } = useAuth()
@@ -41,13 +53,17 @@ export default function Home() {
   const territory = user?.territory || data?.user?.territory || data?.territory || '—'
   const ar = data?.ar || data?.aging || {}
   const arTotal = ar.total ?? ar.outstanding ?? 0
-  const overdueInv = ar.overdue_invoices ?? ar.overdueInv ?? 0
-  const buckets = ar.buckets || [ar.current || 0, ar.d1_30 || 0, ar.d31_60 || 0, ar.d60_plus || 0]
+  const overdueInv = ar.overdue_count ?? ar.overdue_invoices ?? ar.overdueInv ?? 0
+  const buckets = ar.buckets || [ar.CURRENT ?? ar.current ?? 0, ar['1-30'] ?? ar.d1_30 ?? 0, ar['31-60'] ?? ar.d31_60 ?? 0, ar['60+'] ?? ar.d60_plus ?? 0]
   const pipeline = listOf(data?.pipeline)
   const topAr = listOf(data?.top_aging || data?.top_ar)
   const today = data?.today || {}
   const notif = data?.notifications_count ?? data?.unread_notifications ?? 0
   const badges = data?.menu_badges || {}
+  const activities = data?.activities || {}
+  const delegations = data?.delegations || {}
+  const ordering = canOrder(user)
+  const delegationBadge = ordering ? delegations.incoming_pending : delegations.outgoing_pending
 
   const onBannerScroll = (el) => {
     const i = Math.round(el.scrollLeft / 300)
@@ -79,7 +95,7 @@ export default function Home() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 11.5, fontWeight: 700 }}>{name}</div>
             <div className="muted" style={{ fontSize: 10 }}>
-              {String(role).charAt(0).toUpperCase() + String(role).slice(1)} · {territory}
+              {user ? roleLabel(user) : String(role).charAt(0).toUpperCase() + String(role).slice(1)} · {territory}
             </div>
           </div>
           <span
@@ -156,7 +172,26 @@ export default function Home() {
           badge={badges.leads || badges.canvassing}
           badgeClass="g4"
         />
-        <GridItem ic="🛒" label="New Order" color="var(--orange)" onClick={() => nav('/orders/new')} />
+        <GridItem
+          ic="✅"
+          label="Activities"
+          color="var(--orange)"
+          onClick={() => nav('/activities')}
+          badge={activities.late > 0 ? activities.late : activities.total || undefined}
+          badgeClass={activities.late > 0 ? 'g2' : 'g4'}
+        />
+        <GridItem ic="📄" label="Quotation" color="var(--blue)" onClick={() => nav('/quotes')} />
+        {ordering && <GridItem ic="🛒" label="New Order" color="var(--orange)" onClick={() => nav('/orders/new')} />}
+        <GridItem
+          ic="🤝"
+          label="Delegasi"
+          color="var(--blue)"
+          onClick={() => nav('/delegations')}
+          badge={delegationBadge > 0 ? delegationBadge : undefined}
+          badgeClass="g2"
+        />
+        <GridItem ic="📊" label="Laporan NOO" color="var(--green)" onClick={() => nav('/reports/noo')} />
+        {isManager(user) && <GridItem ic="⚙️" label="Master Data" color="var(--mut)" onClick={() => nav('/master')} />}
         <GridItem
           ic="🚚"
           label="Order Tracker"
@@ -241,7 +276,7 @@ export default function Home() {
         <div className="fcard" onClick={() => nav('/promo')} role="button" tabIndex={0}>
           <div className="fe">🎁</div>
           <div className="ft">Promo aktif</div>
-          <div className="fs">{today.promo_label || 'Penawaran berlaku'}</div>
+          <div className="fs">{today.promo_label || 'Quotation berlaku'}</div>
         </div>
       </div>
 
@@ -256,18 +291,9 @@ export default function Home() {
           <div className="loading-center">Memuat…</div>
         ) : (
           <div className="bars">
-            {(pipeline.length
-              ? pipeline
-              : [
-                  { stage: 'New', count: 0, color: 'var(--orange)' },
-                  { stage: 'Contact', count: 0, color: 'var(--blue)' },
-                  { stage: 'Qualified', count: 0, color: 'var(--orange2)' },
-                  { stage: 'Quote', count: 0, color: 'var(--amber)' },
-                  { stage: 'Won', count: 0, color: 'var(--green)' },
-                ]
-            ).map((p) => {
+            {(pipeline.length ? pipeline : PIPELINE_DEFAULT).map((p) => {
               const n = p.count ?? p.value ?? 0
-              const label = p.stage || p.name || p.label
+              const label = SHORT_LABEL[p.key] || p.label || p.stage || p.name
               const c = p.color || 'var(--orange)'
               return (
                 <div className="col" key={label}>

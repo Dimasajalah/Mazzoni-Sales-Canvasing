@@ -10,7 +10,8 @@ class SalesOrderLine extends Model
 {
     protected $fillable = [
         'order_id', 'product_id', 'is_custom', 'custom_part_name',
-        'qty', 'uom', 'unit_price', 'discount', 'line_total',
+        'qty', 'qty_kg', 'gramasi_gr', 'qty_pcs', 'packaging_id',
+        'uom', 'unit_price', 'discount', 'line_total',
     ];
 
     protected function casts(): array
@@ -18,6 +19,8 @@ class SalesOrderLine extends Model
         return [
             'is_custom' => 'boolean',
             'qty' => 'decimal:2',
+            'qty_kg' => 'decimal:3',
+            'gramasi_gr' => 'decimal:2',
             'unit_price' => 'decimal:2',
             'discount' => 'decimal:2',
             'line_total' => 'decimal:2',

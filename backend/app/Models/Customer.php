@@ -11,8 +11,8 @@ class Customer extends Model
 {
     protected $fillable = [
         'customer_code', 'name', 'customer_group', 'grade', 'address', 'city', 'phone', 'email', 'npwp',
-        'credit_limit', 'credit_hold', 'latitude', 'longitude', 'salesperson_id', 'active', 'epicor_customer_num',
-        'external_system', 'external_id', 'sync_status', 'last_sync_at',
+        'sales_notes', 'credit_limit', 'credit_hold', 'latitude', 'longitude', 'salesperson_id', 'active',
+        'epicor_customer_num', 'external_system', 'external_id', 'sync_status', 'last_sync_at',
     ];
 
     protected function casts(): array
@@ -35,6 +35,11 @@ class Customer extends Model
     public function visits(): HasMany
     {
         return $this->hasMany(Visit::class);
+    }
+
+    public function samples(): HasMany
+    {
+        return $this->hasMany(ProductSample::class);
     }
 
     public function salesOrders(): HasMany

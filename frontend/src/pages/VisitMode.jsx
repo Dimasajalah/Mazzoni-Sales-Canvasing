@@ -1,14 +1,16 @@
 //frontend/src/pages/VisitMode.jsx
-import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { checkoutVisit } from '../api'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { checkoutVisit, getVisit } from '../api'
+import { Field } from '../components/Field'
+import LeadTaskPanel from '../components/LeadTaskPanel'
 import { Screen, TopBar } from '../components/ui'
 import { useUi } from '../context/UiContext'
 import { useGeolocation } from '../hooks/useGeolocation'
 
 const RESULTS = [
   'Pesanan didapat',
-  'Penawaran diberikan',
+  'Quotation diberikan',
   'Follow-up dijadwalkan',
   'Tidak ada order',
   'Tidak bertemu',
@@ -17,6 +19,7 @@ const RESULTS = [
 
 export default function VisitMode() {
   const loc = useLocation()
+  const { id: routeId } = useParams()
   const nav = useNavigate()
   const { showToast } = useUi()
   const { coords, refresh } = useGeolocation()
@@ -24,22 +27,45 @@ export default function VisitMode() {
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const [elapsed, setElapsed] = useState('00:00')
+  const [customer, setCustomer] = useState(loc.state?.customer || null)
+  // Hasil meeting lanjutan: check-in bisa menyasar Lead langsung — begitu kunjungan ini milik
+  // sebuah Lead, panel tugas Canvassing (Brand Awareness/Sample/Quotation) tampil di sini juga,
+  // supaya sales bisa langsung isi tugasnya tanpa pindah layar ("dari situ dia langsung integrate
+  // semua, dia bisa buat penawarannya dari situ").
+  const [lead, setLead] = useState(loc.state?.lead || null)
+  const [checkedInAt, setCheckedInAt] = useState(loc.state?.checkedInAt || null)
 
-  const visitId = loc.state?.visitId
-  const customer = loc.state?.customer
-  const started = loc.state?.checkedInAt ? new Date(loc.state.checkedInAt) : new Date()
+  const visitId = loc.state?.visitId || routeId
+  // useMemo: sebelumnya objek Date dibuat ulang tiap render sehingga interval & GPS diulang terus
+  const started = useMemo(() => (checkedInAt ? new Date(checkedInAt) : new Date()), [checkedInAt])
+
+  const reloadVisit = () =>
+    getVisit(visitId)
+      .then((v) => {
+        if (v?.customer) setCustomer(v.customer)
+        if (v?.lead) setLead(v.lead)
+        if (!checkedInAt && v?.checkin_at) setCheckedInAt(v.checkin_at)
+      })
+      .catch(() => {})
+
+  // Halaman dibuka ulang tanpa state (mis. refresh): ambil data kunjungan dari server
+  useEffect(() => {
+    if ((customer && checkedInAt) || !visitId) return
+    reloadVisit()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visitId])
 
   useEffect(() => {
     refresh().catch(() => {})
+  }, [refresh])
+
+  useEffect(() => {
     const t = setInterval(() => {
-      const ms = Date.now() - started.getTime()
-      const s = Math.floor(ms / 1000)
-      const mm = String(Math.floor(s / 60)).padStart(2, '0')
-      const ss = String(s % 60).padStart(2, '0')
-      setElapsed(`${mm}:${ss}`)
+      const s = Math.max(0, Math.floor((Date.now() - started.getTime()) / 1000))
+      setElapsed(`${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`)
     }, 1000)
     return () => clearInterval(t)
-  }, [refresh, started])
+  }, [started])
 
   const checkout = async () => {
     if (!visitId) {
@@ -65,65 +91,49 @@ export default function VisitMode() {
     }
   }
 
+  const distance = loc.state?.distance
+
   return (
     <Screen noNav>
       <TopBar title="Visit Mode" backTo="/visits" />
       <div className="card accent-g" style={{ marginBottom: 12 }}>
         <div className="muted" style={{ fontSize: 11 }}>Sedang berkunjung</div>
-        <div style={{ fontWeight: 800, fontSize: 16 }}>{customer?.name || 'Customer'}</div>
+        <div style={{ fontWeight: 800, fontSize: 16 }}>{customer?.name || lead?.business_name || 'Customer'}</div>
         <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
           Durasi {elapsed}
-          {loc.state?.distance != null ? ` · jarak check-in ${Math.round(loc.state.distance)} m` : ''}
+          {distance != null ? ` · jarak check-in ${Math.round(distance)} m` : ''}
         </div>
       </div>
 
-      <div className="field">
-        <label>Hasil kunjungan</label>
+      {lead && (
+        <>
+          <div className="section-h">Tugas Canvassing</div>
+          {/* key wajib ada: lihat catatan yang sama di Leads.jsx openLead() — tanpa ini, panel
+              tetap menampilkan tugas LAMA setelah reloadVisit() memperbarui `lead`, karena
+              LeadTaskPanel menyimpan tugas di state internalnya sendiri yang tidak otomatis
+              mengikuti perubahan prop. */}
+          <LeadTaskPanel
+            key={`${lead.id}-${lead.current_task?.id ?? 'none'}`}
+            lead={lead}
+            task={lead.current_task}
+            onChanged={reloadVisit}
+            onClose={reloadVisit}
+            showToast={showToast}
+            hideCheckin
+          />
+        </>
+      )}
+
+      <Field label="Hasil kunjungan">
         <select value={result} onChange={(e) => setResult(e.target.value)}>
           {RESULTS.map((r) => (
             <option key={r}>{r}</option>
           ))}
         </select>
-      </div>
-      <div className="field">
-        <label>Catatan</label>
+      </Field>
+      <Field label="Catatan">
         <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
-      </div>
-
-      <div className="section-h">Quick actions</div>
-      <div className="qa">
-        <div
-          className="item"
-          onClick={() => nav('/orders/new', { state: { customerId: customer?.id } })}
-          role="button"
-          tabIndex={0}
-        >
-          <div className="ic" style={{ background: 'rgba(238,106,10,.15)' }}>🛒</div>
-          <div className="t">Order</div>
-        </div>
-        <div
-          className="item"
-          onClick={() => nav('/payment', { state: { customerId: customer?.id } })}
-          role="button"
-          tabIndex={0}
-        >
-          <div className="ic" style={{ background: 'rgba(18,160,90,.15)' }}>💳</div>
-          <div className="t">Bayar</div>
-        </div>
-        <div
-          className="item"
-          onClick={() => nav('/returns/new', { state: { customerId: customer?.id } })}
-          role="button"
-          tabIndex={0}
-        >
-          <div className="ic" style={{ background: 'rgba(42,111,214,.15)' }}>↩️</div>
-          <div className="t">Retur</div>
-        </div>
-        <div className="item" onClick={() => nav('/expenses/new')} role="button" tabIndex={0}>
-          <div className="ic" style={{ background: 'rgba(184,116,0,.15)' }}>🧾</div>
-          <div className="t">Expense</div>
-        </div>
-      </div>
+      </Field>
 
       <button type="button" className="btn" style={{ marginTop: 16 }} disabled={busy} onClick={checkout}>
         {busy ? 'Checkout…' : 'Checkout'}

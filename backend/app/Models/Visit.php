@@ -1,5 +1,5 @@
 <?php
-
+//backend/app/models/Visit.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Visit extends Model
 {
     protected $fillable = [
-        'customer_id', 'salesperson_id', 'checkin_at', 'checkin_latitude', 'checkin_longitude',
+        'lead_id', 'customer_id', 'salesperson_id', 'checkin_at', 'checkin_latitude', 'checkin_longitude',
         'checkin_accuracy', 'checkin_distance', 'checkout_at', 'checkout_latitude', 'checkout_longitude',
         'duration_minutes', 'visit_result', 'notes',
     ];
@@ -31,6 +31,12 @@ class Visit extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /** Check-in bisa menyasar Lead langsung (belum tentu sudah punya Customer). */
+    public function lead(): BelongsTo
+    {
+        return $this->belongsTo(Lead::class);
     }
 
     public function salesperson(): BelongsTo

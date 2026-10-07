@@ -22,10 +22,20 @@ class User extends Authenticatable
         'username',
         'password',
         'role',
+        'sales_type',
         'territory',
         'active',
         'last_login_at',
     ];
+
+    public const SALES_DEALMAKER = 'DEALMAKER';
+
+    public const SALES_ORDER = 'ORDER';
+
+    public const SALES_TYPES = [self::SALES_DEALMAKER, self::SALES_ORDER];
+
+    /** Ikut tampil di respons login / me agar aplikasi bisa menyembunyikan menu sesuai peran. */
+    protected $appends = ['can_order', 'can_delegate'];
 
     protected $hidden = [
         'password',
@@ -40,6 +50,39 @@ class User extends Authenticatable
             'password' => 'hashed',
             'active' => 'boolean',
         ];
+    }
+
+    /** Sales Dealmaker: NOO, kunjungan, sample, negosiasi, delegasi. Tidak bisa order. */
+    public function isDealmaker(): bool
+    {
+        return $this->role === 'sales' && $this->sales_type === self::SALES_DEALMAKER;
+    }
+
+    public function canOrder(): bool
+    {
+        return ! $this->isDealmaker();
+    }
+
+    /** Delegasi dilakukan Dealmaker; admin/supervisor boleh mengatur ulang. Sales Order tidak bisa mendelegasikan. */
+    public function canDelegate(): bool
+    {
+        return $this->isDealmaker() || in_array($this->role, ['admin', 'supervisor'], true);
+    }
+
+    // null bila kolom peran tidak dimuat (relasi user yang hanya memilih id/name), agar tidak menyesatkan
+    public function getCanOrderAttribute(): ?bool
+    {
+        return $this->rolesLoaded() ? $this->canOrder() : null;
+    }
+
+    public function getCanDelegateAttribute(): ?bool
+    {
+        return $this->rolesLoaded() ? $this->canDelegate() : null;
+    }
+
+    private function rolesLoaded(): bool
+    {
+        return array_key_exists('role', $this->attributes) && array_key_exists('sales_type', $this->attributes);
     }
 
     public function customers(): HasMany

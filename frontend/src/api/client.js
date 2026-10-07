@@ -74,11 +74,16 @@ export async function api(path, options = {}) {
     payload = JSON.stringify(body)
   }
 
-  const res = await fetch(`${API_BASE}${path.startsWith('/') ? path : `/${path}`}`, {
-    method,
-    headers,
-    body: method === 'GET' || method === 'HEAD' ? undefined : payload,
-  })
+  let res
+  try {
+    res = await fetch(`${API_BASE}${path.startsWith('/') ? path : `/${path}`}`, {
+      method,
+      headers,
+      body: method === 'GET' || method === 'HEAD' ? undefined : payload,
+    })
+  } catch {
+    throw new ApiError('Tidak ada koneksi internet — periksa sinyal Anda', { status: 0 })
+  }
 
   const data = await parseBody(res)
 

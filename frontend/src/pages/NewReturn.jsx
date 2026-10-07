@@ -7,6 +7,7 @@ import { useUi } from '../context/UiContext'
 import { listOf, listProducts } from '../lib/format'
 import { uuid } from '../lib/uuid'
 import { saveDraft, loadDraft, clearDraft } from '../lib/drafts'
+import { offlineSaveMessage } from '../lib/draftSync'
 import { useOnline } from '../hooks/useOnline'
 
 export default function NewReturn() {
@@ -76,7 +77,7 @@ export default function NewReturn() {
       nav('/returns')
     } catch (e) {
       saveDraft('return', { form: payload })
-      showToast(e.message || 'Gagal kirim retur', { warn: true })
+      showToast(offlineSaveMessage(e, 'Retur'), { warn: true })
     } finally {
       setBusy(false)
     }

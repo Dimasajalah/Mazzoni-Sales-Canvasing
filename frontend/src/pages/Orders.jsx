@@ -32,7 +32,7 @@ export default function Orders() {
           key={o.id || o.order_number}
           barColor={statusColor(o.status)}
           title={o.order_number || o.so}
-          subtitle={`${o.customer?.name || o.customer_name || o.cust} · ${o.status === 'HOLD' ? '⚠ HOLD' : (o.status || o.st || '—')}`}
+          subtitle={`${o.customer?.name || o.customer_name || o.cust} · ${o.status === 'HOLD' ? '⚠ HOLD' : (o.status || o.st || '—')}${o.destination === 'DISTRIBUTOR' ? ' · ke Distributor' : ''}`}
           right={o.total != null ? fmtRp(o.total) : o.d}
           onClick={() => nav('/track', { state: { orderId: o.id } })}
         />

@@ -17,7 +17,7 @@ class VisitController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $filters = $request->only(['customer_id', 'salesperson_id']);
+        $filters = $request->only(['customer_id', 'lead_id', 'salesperson_id']);
         if ($request->user()->role === 'sales' && empty($filters['salesperson_id'])) {
             $filters['salesperson_id'] = $request->user()->id;
         }
@@ -38,11 +38,20 @@ class VisitController extends Controller
     public function checkin(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'customer_id' => ['required', 'exists:customers,id'],
+            // Check-in sekarang bisa menyasar Customer (lama) ATAU Lead langsung (baru) — tepat
+            // salah satu yang wajib diisi, lihat VisitService::checkIn().
+            'customer_id' => ['nullable', 'required_without:lead_id', 'exists:customers,id'],
+            'lead_id' => ['nullable', 'required_without:customer_id', 'exists:leads,id'],
             'latitude' => ['required', 'numeric'],
             'longitude' => ['required', 'numeric'],
             'accuracy' => ['nullable', 'numeric'],
         ]);
+
+        if (! empty($data['customer_id']) && ! empty($data['lead_id'])) {
+            return ApiResponse::error('Check-in ditolak', [
+                'lead_id' => ['Pilih salah satu: customer atau lead, tidak keduanya.'],
+            ], 422);
+        }
 
         try {
             $visit = $this->visitService->checkIn($data, $request->user());

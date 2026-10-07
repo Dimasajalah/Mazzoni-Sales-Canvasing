@@ -82,13 +82,16 @@ export function ListItem({ barColor, avatar, title, subtitle, right, onClick }) 
   )
 }
 
-export function AgingBuckets({ buckets = [0, 0, 0, 0] }) {
+// hideCurrent: dipakai Detail Customer (hasil meeting lanjutan: "hapus fitur Lancar di Aging di
+// Customer") — dashboard Home/Laporan Aging AR tidak diminta berubah, jadi defaultnya tetap
+// menampilkan Lancar seperti sebelumnya; hanya pemanggil yang eksplisit minta yang kehilangan bucket ini.
+export function AgingBuckets({ buckets = [0, 0, 0, 0], hideCurrent = false }) {
   const cells = [
     { l: 'Lancar', v: buckets[0], c: 'var(--green)' },
     { l: '1-30', v: buckets[1], c: 'var(--amber)' },
     { l: '31-60', v: buckets[2], c: '#FF8A3D' },
     { l: '60+', v: buckets[3], c: 'var(--pink)' },
-  ]
+  ].filter((b) => !hideCurrent || b.l !== 'Lancar')
   return (
     <div className="aging">
       {cells.map((b) => (

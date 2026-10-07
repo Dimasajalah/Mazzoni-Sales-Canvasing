@@ -5,8 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useUi } from '../context/UiContext'
 import { Screen } from '../components/ui'
 import { useOnline } from '../hooks/useOnline'
-import { loadDrafts, removeDraft } from '../lib/drafts'
-import { createExpense, createLead, createOrder, createReturn } from '../api'
+import { syncPendingDrafts } from '../lib/draftSync'
 
 export default function Login() {
   const { login, isAuthenticated, booting } = useAuth()
@@ -19,64 +18,12 @@ export default function Login() {
 
   if (!booting && isAuthenticated) return <Navigate to="/home" replace />
 
-  const retryDrafts = async () => {
-    if (!online) return
-    const leadDrafts = loadDrafts('lead')
-    for (const d of leadDrafts) {
-      try {
-        await createLead(d.payload || d)
-        removeDraft('lead', d.id)
-      } catch {
-        /* keep */
-      }
-    }
-    const orderDrafts = loadDrafts('order')
-    for (const d of orderDrafts) {
-      try {
-        await createOrder(d.payload || d)
-        removeDraft('order', d.id)
-      } catch {
-        /* keep */
-      }
-    }
-    const expDrafts = loadDrafts('expense')
-    for (const d of expDrafts) {
-      try {
-        if (d.formFields) {
-          const fd = new FormData()
-          Object.entries(d.formFields).forEach(([k, v]) => {
-            if (v != null) fd.append(k, v)
-          })
-          await createExpense(fd)
-          removeDraft('expense', d.id)
-        }
-      } catch {
-        /* keep */
-      }
-    }
-    const retDrafts = loadDrafts('return')
-    for (const d of retDrafts) {
-      try {
-        if (d.formFields) {
-          const fd = new FormData()
-          Object.entries(d.formFields).forEach(([k, v]) => {
-            if (v != null) fd.append(k, v)
-          })
-          await createReturn(fd)
-          removeDraft('return', d.id)
-        }
-      } catch {
-        /* keep */
-      }
-    }
-  }
-
   const onSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     try {
       await login(loginId.trim(), password)
-      await retryDrafts()
+      if (online) await syncPendingDrafts()
       showToast('Berhasil masuk')
       nav('/home', { replace: true })
     } catch (err) {

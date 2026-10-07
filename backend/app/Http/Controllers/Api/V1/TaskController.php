@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Helpers\ApiResponse;
 use App\Models\Task;
 use App\Models\TaskSet;
+use App\Models\TaskTemplate;
 use App\Models\TaskType;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -40,5 +41,17 @@ class TaskController extends Controller
         }
 
         return ApiResponse::success($query->orderBy('name')->get());
+    }
+
+    /** Template langkah per Task Set (dipakai memilih tugas berikutnya). */
+    public function templates(Request $request): JsonResponse
+    {
+        $query = TaskTemplate::where('active', true)->orderBy('task_set_id')->orderBy('seq');
+
+        if ($request->filled('task_set_id')) {
+            $query->where('task_set_id', $request->get('task_set_id'));
+        }
+
+        return ApiResponse::success($query->get());
     }
 }

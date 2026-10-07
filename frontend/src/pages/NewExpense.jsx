@@ -6,6 +6,7 @@ import { Screen, TopBar } from '../components/ui'
 import { useUi } from '../context/UiContext'
 import { useOnline } from '../hooks/useOnline'
 import { saveDraft } from '../lib/drafts'
+import { offlineSaveMessage } from '../lib/draftSync'
 import { listOf } from '../lib/format'
 import { uuid } from '../lib/uuid'
 
@@ -66,7 +67,7 @@ export default function NewExpense() {
       nav('/expenses')
     } catch (err) {
       saveDraft('expense', { id: client_uuid, formFields })
-      showToast(err.message || 'Gagal — draft tersimpan', { error: true })
+      showToast(offlineSaveMessage(err, 'Expense'), { error: true })
     } finally {
       setSaving(false)
     }

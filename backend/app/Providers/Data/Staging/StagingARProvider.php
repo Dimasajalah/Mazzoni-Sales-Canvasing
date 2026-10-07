@@ -45,7 +45,10 @@ class StagingARProvider implements ARDataProviderInterface
             '60+' => 0.0,
             'total' => 0.0,
             'overdue_count' => 0,
+            'customers_with_ar' => 0,
         ];
+
+        $customerIds = [];
 
         foreach ($invoices as $invoice) {
             $bucket = $invoice->agingBucket();
@@ -55,7 +58,12 @@ class StagingARProvider implements ARDataProviderInterface
             if ($invoice->daysOverdue() > 0) {
                 $summary['overdue_count']++;
             }
+            if ($balance > 0) {
+                $customerIds[$invoice->customer_id] = true;
+            }
         }
+
+        $summary['customers_with_ar'] = count($customerIds);
 
         return $summary;
     }
@@ -70,7 +78,7 @@ class StagingARProvider implements ARDataProviderInterface
         });
 
         if ($bucket && $bucket !== 'ALL') {
-            $invoices = $invoices->filter(fn (Invoice $invoice) => $invoice->aging_bucket === $bucket)->values();
+            $invoices = $invoices->filter(fn(Invoice $invoice) => $invoice->aging_bucket === $bucket)->values();
         }
 
         return $invoices->sortByDesc('days_overdue')->values();

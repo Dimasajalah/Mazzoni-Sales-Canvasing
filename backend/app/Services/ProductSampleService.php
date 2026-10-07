@@ -6,6 +6,7 @@ namespace App\Services;
 use App\Models\ProductSample;
 use App\Models\ProductSampleFeedback;
 use App\Models\User;
+use App\Models\Lead;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ProductSampleService
@@ -20,6 +21,9 @@ class ProductSampleService
         if (! empty($filters['lead_id'])) {
             $query->where('lead_id', $filters['lead_id']);
         }
+        if (! empty($filters['lead_task_id'])) {
+            $query->where('lead_task_id', $filters['lead_task_id']);
+        }
         if (! empty($filters['salesperson_id'])) {
             $query->where('salesperson_id', $filters['salesperson_id']);
         }
@@ -32,8 +36,22 @@ class ProductSampleService
         return ProductSample::with(['customer', 'lead', 'salesperson', 'feedbacks'])->find($id);
     }
 
+    private function withLeadCustomer(array $data): array
+    {
+        if (! empty($data['lead_id'])) {
+            $customerId = Lead::whereKey($data['lead_id'])->value('customer_id');
+            if ($customerId) {
+                $data['customer_id'] = $customerId;
+            }
+        }
+
+        return $data;
+    }
+
     public function create(array $data, User $user): ProductSample
     {
+        $data = $this->withLeadCustomer($data);
+
         return ProductSample::create([
             ...$data,
             'salesperson_id' => $data['salesperson_id'] ?? $user->id,
@@ -60,12 +78,12 @@ class ProductSampleService
 
     public function recordFeedback(array $data, User $user): ProductSampleFeedback
     {
+        $data = $this->withLeadCustomer($data);
+
         return ProductSampleFeedback::create([
             ...$data,
             'salesperson_id' => $data['salesperson_id'] ?? $user->id,
-            'revision_types' => $data['feedback_type'] === 'revision'
-                ? ($data['revision_types'] ?? [])
-                : null,
+            'revision_types' => ! empty($data['revision_types']) ? $data['revision_types'] : null,
         ]);
     }
 }

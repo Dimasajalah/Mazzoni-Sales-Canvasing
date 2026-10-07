@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Providers\Data\Contracts\CustomerDataProviderInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use App\Models\Visit;
 
 class StagingCustomerProvider implements CustomerDataProviderInterface
 {
@@ -35,7 +36,23 @@ class StagingCustomerProvider implements CustomerDataProviderInterface
 
     public function find(int $id): ?Customer
     {
-        return Customer::with(['salesperson', 'invoices'])->find($id);
+        $customer = Customer::with(['salesperson', 'invoices', 'samples' => fn ($q) => $q->latest('id')])->find($id);
+        if (! $customer) {
+            return null;
+        }
+
+        // Kunjungan yang dilakukan saat masih Lead (customer_id kosong) ikut dihitung ke customer
+        // begitu lead itu menjadi customer (leads.customer_id terisi). Terbaru dulu.
+        $visits = Visit::query()
+            ->where(function ($q) use ($id) {
+                $q->where('customer_id', $id)
+                    ->orWhereHas('lead', fn ($l) => $l->where('customer_id', $id));
+            })
+            ->orderByDesc('checkin_at')
+            ->get();
+        $customer->setRelation('visits', $visits);
+
+        return $customer;
     }
 
     public function create(array $data): Customer

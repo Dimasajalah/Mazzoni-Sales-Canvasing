@@ -10,10 +10,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductSample extends Model
 {
+    public const STATUS_PENDING = 'PENDING';
+
+    public const STATUS_DELIVERED = 'DELIVERED';
+
     protected $fillable = [
-        'customer_id', 'lead_id', 'salesperson_id',
-        'product_name', 'flavor_variant', 'version', 'qty', 'notes',
+        'customer_id', 'lead_id', 'lead_task_id', 'salesperson_id',
+        'product_name', 'product_group', 'flavor_variant', 'version', 'qty', 'batch_number', 'notes',
+        'status', 'delivered_at',
     ];
+
+    protected $attributes = [
+        'status' => self::STATUS_PENDING,
+    ];
+
+    protected function casts(): array
+    {
+        return ['delivered_at' => 'datetime'];
+    }
 
     public function customer(): BelongsTo
     {

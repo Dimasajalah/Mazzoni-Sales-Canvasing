@@ -1,65 +1,65 @@
-//frontend/src/components/VisitsMap.jsx
-import { useRef, useState } from "react";
-import { GoogleMap, Marker, Autocomplete, useJsApiLoader } from "@react-google-maps/api";
-import { GOOGLE_MAPS_LIBRARIES } from "../lib/googleMaps";
+// frontend/src/components/VisitsMap.jsx
+// Sebaran titik check-in kunjungan (OpenStreetMap).
+import 'leaflet/dist/leaflet.css'
+import { useEffect, useState } from 'react'
+import { AttributionControl, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
+import { pinIcon, selectedIcon } from '../lib/mapIcons'
 
-const containerStyle = { width: "100%", height: "220px", borderRadius: "12px", marginBottom: 14 };
-const defaultCenter = { lat: -6.2, lng: 106.816666 };
+const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 
-export default function VisitsMap({ visits }) {
-    const { isLoaded } = useJsApiLoader({
-        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-        libraries: GOOGLE_MAPS_LIBRARIES,
-    });
+const num = (v) => (v === null || v === undefined || v === '' ? null : Number(v))
 
-    const autocompleteRef = useRef(null);
-    const [mapCenter, setMapCenter] = useState(null);
-    const [selectedId, setSelectedId] = useState(null);
+function FitAll({ points }) {
+  const map = useMap()
+  const key = points.map((p) => p.id).join(',')
 
-    const handlePlaceChanged = () => {
-        const place = autocompleteRef.current?.getPlace();
-        if (!place?.geometry?.location) return;
-        setMapCenter({ lat: place.geometry.location.lat(), lng: place.geometry.location.lng() });
-    };
+  useEffect(() => {
+    if (points.length === 1) map.setView([points[0].lat, points[0].lng], 15)
+    else if (points.length > 1) map.fitBounds(points.map((p) => [p.lat, p.lng]), { padding: [24, 24], maxZoom: 16 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, map])
 
-    const points = visits
-        .map((v) => ({
-            id: v.id,
-            lat: v.checkin_lat ?? v.latitude ?? v.lat,
-            lng: v.checkin_lng ?? v.longitude ?? v.lng,
-            name: v.customer?.name || v.customer_name || v.cust,
-        }))
-        .filter((p) => p.lat != null && p.lng != null);
+  return null
+}
 
-    if (!isLoaded) return <div>Loading map…</div>;
-    if (points.length === 0) return null;
+export default function VisitsMap({ visits, height = 220 }) {
+  const [selectedId, setSelectedId] = useState(null)
 
-    const center = points[0] ? { lat: points[0].lat, lng: points[0].lng } : defaultCenter;
+  // Backend memakai checkin_latitude / checkin_longitude
+  const points = (visits || [])
+    .map((v) => ({
+      id: v.id,
+      lat: num(v.checkin_latitude ?? v.checkin_lat ?? v.latitude ?? v.lat),
+      lng: num(v.checkin_longitude ?? v.checkin_lng ?? v.longitude ?? v.lng),
+      name: v.customer?.name || v.customer_name || v.cust || 'Kunjungan',
+    }))
+    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
 
-    return (
-        <div>
-            <Autocomplete onLoad={(ac) => (autocompleteRef.current = ac)} onPlaceChanged={handlePlaceChanged}>
-                <input
-                    type="text"
-                    placeholder="Cari lokasi…"
-                    style={{ width: "100%", padding: 8, marginBottom: 8, boxSizing: "border-box" }}
-                />
-            </Autocomplete>
-            <GoogleMap mapContainerStyle={containerStyle} center={mapCenter || center} zoom={13}>
-                {points.map((p) => (
-                    <Marker
-                        key={p.id}
-                        position={{ lat: p.lat, lng: p.lng }}
-                        title={p.name}
-                        onClick={() => setSelectedId(p.id)}
-                        icon={
-                            selectedId === p.id
-                                ? { path: window.google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: "#EA4335", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 }
-                                : undefined
-                        }
-                    />
-                ))}
-            </GoogleMap>
-        </div>
-    );
+  if (points.length === 0) return null
+
+  return (
+    <div className="lp-map" style={{ height, borderRadius: 12, marginBottom: 14 }}>
+      <MapContainer
+        center={[points[0].lat, points[0].lng]}
+        zoom={13}
+        attributionControl={false}
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} maxZoom={19} />
+        <AttributionControl prefix={false} position="bottomleft" />
+        <FitAll points={points} />
+        {points.map((p) => (
+          <Marker
+            key={p.id}
+            position={[p.lat, p.lng]}
+            icon={selectedId === p.id ? selectedIcon : pinIcon}
+            eventHandlers={{ click: () => setSelectedId(p.id) }}
+          >
+            <Popup>{p.name}</Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
+  )
 }

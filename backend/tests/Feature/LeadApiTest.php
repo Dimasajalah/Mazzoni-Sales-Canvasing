@@ -22,6 +22,7 @@ class LeadApiTest extends TestCase
             'address' => 'Jl. Merdeka, Surabaya',
             'phone' => '08123456789',
             'business_type' => 'Grosir',
+            'ktp' => '3578010101900001',
             'latitude' => -7.2575,
             'longitude' => 112.7521,
         ]);
@@ -29,7 +30,8 @@ class LeadApiTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.business_name', 'UD Baru Jaya')
-            ->assertJsonPath('data.stage', 'NEW');
+            ->assertJsonPath('data.stage', 'LEAD')
+            ->assertJsonPath('data.win_loss', 'OPEN');
 
         $this->assertDatabaseHas('leads', [
             'business_name' => 'UD Baru Jaya',

@@ -1,12 +1,17 @@
 // frontend/src/pages/NewOrder.jsx
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { createOrder, getCustomers, getProducts, getPromos } from '../api'
+import { createOrder, getCustomers, getProductPackagings, getProducts, getPromos } from '../api'
+import { Field } from '../components/Field'
 import { Screen, TopBar } from '../components/ui'
+import { useAuth } from '../context/AuthContext'
 import { useUi } from '../context/UiContext'
 import { useOnline } from '../hooks/useOnline'
 import { saveDraft } from '../lib/drafts'
+import { offlineSaveMessage } from '../lib/draftSync'
 import { fmtRp, listOf, listProducts } from '../lib/format'
+import { kgToPcs } from '../lib/packaging'
+import { canOrder } from '../lib/roles'
 import { uuid } from '../lib/uuid'
 
 const NPD_OPTION_VALUE = '__NPD__'
@@ -16,6 +21,8 @@ export default function NewOrder() {
   const nav = useNavigate()
   const online = useOnline()
   const { showToast } = useUi()
+  const { user } = useAuth()
+  const ordering = canOrder(user)
   const [customers, setCustomers] = useState([])
   const [products, setProducts] = useState([])
   const [promos, setPromos] = useState([])
@@ -26,6 +33,13 @@ export default function NewOrder() {
   const [qty, setQty] = useState(1)
   const [lines, setLines] = useState([])
   const [saving, setSaving] = useState(false)
+
+  // Tujuan order (HO / Distributor) dan mode input Kg (dikonversi ke pcs berdasarkan gramasi kemasan)
+  const [destination, setDestination] = useState('HO')
+  const [distributorId, setDistributorId] = useState('')
+  const [unitMode, setUnitMode] = useState('qty') // 'qty' | 'kg'
+  const [packagings, setPackagings] = useState([])
+  const [packagingId, setPackagingId] = useState('')
 
   // State khusus untuk input NPD (free-text)
   const [isNpd, setIsNpd] = useState(false)
@@ -46,6 +60,24 @@ export default function NewOrder() {
       })
       .catch((e) => showToast(e.message, { warn: true }))
   }, [showToast])
+
+  const kgMode = unitMode === 'kg' && !isNpd
+
+  useEffect(() => {
+    if (!kgMode || !productId || productId === NPD_OPTION_VALUE) return
+    let alive = true
+    getProductPackagings({ product_id: productId })
+      .then((rows) => {
+        if (!alive) return
+        const list = listOf(rows)
+        setPackagings(list)
+        setPackagingId(list[0] ? String(list[0].id) : '')
+      })
+      .catch(() => alive && setPackagings([]))
+    return () => {
+      alive = false
+    }
+  }, [kgMode, productId])
 
   const onProductChange = (value) => {
     setProductId(value)
@@ -88,6 +120,33 @@ export default function NewOrder() {
     const p = products.find((x) => String(x.id) === String(productId))
     if (!p) return
     const price = Number(p.price) || 0
+
+    if (kgMode) {
+      const kg = Number(qty)
+      const pk = packagings.find((x) => String(x.id) === String(packagingId))
+      if (!(kg > 0)) return showToast('Isi jumlah Kg', { warn: true })
+      if (!pk) return showToast('Pilih kemasan produk ini', { warn: true })
+      const pcs = kgToPcs(kg, pk.gramasi_gr)
+      setLines((prev) => [
+        ...prev,
+        {
+          is_custom: false,
+          product_id: p.product_id || p.id,
+          part_num: p.part_num || p.sku,
+          description: p.description || p.name,
+          qty_kg: kg,
+          gramasi_gr: Number(pk.gramasi_gr),
+          packaging_id: pk.id,
+          packaging_name: pk.name,
+          qty: pcs,
+          uom: 'PCS',
+          unit_price: price,
+          line_total: pcs * price,
+        },
+      ])
+      return
+    }
+
     setLines((prev) => [
       ...prev,
       {
@@ -116,19 +175,27 @@ export default function NewOrder() {
       showToast('Customer & minimal 1 produk wajib', { warn: true })
       return
     }
+    if (destination === 'DISTRIBUTOR' && !distributorId) {
+      showToast('Pilih distributor tujuan order', { warn: true })
+      return
+    }
     const client_uuid = uuid()
     const payload = {
       customer_id: customerId,
       lead_id: loc.state?.leadId || null,
       customer_po: customerPo || null,
+      destination,
+      distributor_customer_id: destination === 'DISTRIBUTOR' ? Number(distributorId) || null : null,
       promo_id: promoId || null,
       client_uuid,
       lines: lines.map((l) => ({
         product_id: l.is_custom ? null : l.product_id,
         is_custom: !!l.is_custom,
         custom_part_name: l.is_custom ? l.custom_part_name : null,
-        qty: l.qty,
-        uom: l.uom,
+        // Baris Kg: pcs dihitung ulang oleh server dari Kg dan gramasi
+        ...(l.qty_kg
+          ? { qty_kg: l.qty_kg, gramasi_gr: l.gramasi_gr, packaging_id: l.packaging_id }
+          : { qty: l.qty, uom: l.uom }),
         unit_price: l.unit_price,
       })),
     }
@@ -151,18 +218,35 @@ export default function NewOrder() {
       nav('/orders')
     } catch (err) {
       saveDraft('order', { id: client_uuid, client_uuid, payload })
-      showToast(err.message || 'Gagal — tersimpan draft', { error: true })
+      showToast(offlineSaveMessage(err, 'Order'), { error: true })
     } finally {
       setSaving(false)
     }
+  }
+
+  if (!ordering) {
+    return (
+      <Screen>
+        <TopBar title="Catat Order" backTo="/orders" />
+        <div className="card" style={{ padding: 16 }}>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Sales Dealmaker tidak membuat order</div>
+          <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>
+            Untuk prospek yang sudah Win, delegasikan ke Sales Order agar order dibuatkan. Anda tetap dapat membuat kunjungan,
+            sample, dan quotation.
+          </div>
+          <button type="button" className="btn" onClick={() => nav('/leads')}>
+            Ke daftar prospek
+          </button>
+        </div>
+      </Screen>
+    )
   }
 
   return (
     <Screen>
       <TopBar title="Catat Order" backTo="/orders" />
       <form onSubmit={submit}>
-        <div className="field">
-          <label>Customer</label>
+        <Field label="Customer">
           <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} required>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
@@ -170,13 +254,31 @@ export default function NewOrder() {
               </option>
             ))}
           </select>
-        </div>
-        <div className="field">
-          <label>PO Customer (opsional)</label>
+        </Field>
+        <Field label="PO Customer (opsional)">
           <input value={customerPo} onChange={(e) => setCustomerPo(e.target.value)} />
-        </div>
-        <div className="field">
-          <label>Produk</label>
+        </Field>
+        <Field label="Tujuan order">
+          <select value={destination} onChange={(e) => setDestination(e.target.value)}>
+            <option value="HO">HO</option>
+            <option value="DISTRIBUTOR">Distributor</option>
+          </select>
+        </Field>
+        {destination === 'DISTRIBUTOR' && (
+          <Field label="Distributor">
+            <select value={distributorId} onChange={(e) => setDistributorId(e.target.value)}>
+              <option value="">— Pilih distributor —</option>
+              {customers
+                .filter((c) => String(c.id) !== String(customerId))
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+          </Field>
+        )}
+        <Field label="Produk">
           <select value={productId} onChange={(e) => onProductChange(e.target.value)}>
             {products.map((p) => (
               <option key={p.id} value={p.id}>
@@ -185,7 +287,7 @@ export default function NewOrder() {
             ))}
             <option value={NPD_OPTION_VALUE}>— Lainnya (Produk Baru / NPD) —</option>
           </select>
-        </div>
+        </Field>
 
         {isNpd && (
           <div className="card" style={{ padding: 10, marginBottom: 12, border: '1px dashed var(--orange)' }}>
@@ -216,10 +318,39 @@ export default function NewOrder() {
           </div>
         )}
 
+        {!isNpd && (
+          <div className="chips">
+            <button type="button" className={`chip${unitMode === 'qty' ? ' on' : ''}`} onClick={() => setUnitMode('qty')}>
+              Qty biasa
+            </button>
+            <button type="button" className={`chip${unitMode === 'kg' ? ' on' : ''}`} onClick={() => setUnitMode('kg')}>
+              Berdasarkan Kg
+            </button>
+          </div>
+        )}
+        {kgMode && (
+          <Field label="Kemasan (gramasi per pcs)">
+            <select value={packagingId} onChange={(e) => setPackagingId(e.target.value)}>
+              {packagings.length === 0 && <option value="">Belum ada kemasan untuk produk ini</option>}
+              {packagings.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.name} ({Number(k.gramasi_gr)} gr)
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         <div className="row">
           <div className="field" style={{ flex: 1 }}>
-            <label>Qty</label>
-            <input type="number" min={1} value={qty} onChange={(e) => setQty(e.target.value)} />
+            <label htmlFor="ord-qty">{kgMode ? 'Jumlah (Kg)' : 'Qty'}</label>
+            <input
+              id="ord-qty"
+              type="number"
+              min={kgMode ? 0 : 1}
+              step={kgMode ? 'any' : 1}
+              value={qty}
+              onChange={(e) => setQty(e.target.value)}
+            />
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: 12 }}>
             <button type="button" className="btn sm" onClick={addLine}>
@@ -235,7 +366,9 @@ export default function NewOrder() {
                 {l.is_custom && <span className="badge" style={{ marginLeft: 6 }}>NPD</span>}
               </div>
               <div className="d">
-                {l.part_num} · {l.qty} {l.uom} × {fmtRp(l.unit_price)}
+                {l.qty_kg
+                  ? `${l.qty_kg} Kg → ${Number(l.qty).toLocaleString('id-ID')} pcs (${l.gramasi_gr} gr) × ${fmtRp(l.unit_price)}`
+                  : `${l.part_num} · ${l.qty} ${l.uom} × ${fmtRp(l.unit_price)}`}
               </div>
             </div>
             <div className="r">{fmtRp(l.line_total)}</div>

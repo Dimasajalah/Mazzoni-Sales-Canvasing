@@ -41,6 +41,11 @@ class SalesOrderService
         $header['order_date'] = $header['order_date'] ?? now()->toDateString();
         $header['client_uuid'] = $header['client_uuid'] ?? (string) Str::uuid();
         $header['sync_status'] = $header['sync_status'] ?? 'NOT_REQUIRED';
+        // Tujuan order: default HO; distributor hanya berarti bila tujuannya DISTRIBUTOR
+        $header['destination'] = $header['destination'] ?? 'HO';
+        if ($header['destination'] !== 'DISTRIBUTOR') {
+            $header['distributor_customer_id'] = null;
+        }
 
         $order = $this->provider->create($header, $lines);
         $this->auditLogService->log($user->id, 'order.create', SalesOrder::class, $order->id, null, $order->toArray());

@@ -1,9 +1,11 @@
 // frontend/src/App.jsx
+import { useCallback } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { UiProvider } from './context/UiContext'
+import { UiProvider, useUi } from './context/UiContext'
 import { BottomNav, Fab } from './components/BottomNav'
 import { PhoneFrame } from './components/PhoneFrame'
+import { useDraftAutoSync } from './hooks/useDraftAutoSync'
 import './styles/prototype.css'
 import './index.css'
 import NewSample from './pages/NewSample'
@@ -13,6 +15,12 @@ import Home from './pages/Home'
 import Leads from './pages/Leads'
 import NewLead from './pages/NewLead'
 import Canvassing from './pages/Canvassing'
+import Activities from './pages/Activities'
+import QuoteForm from './pages/QuoteForm'
+import Quotes from './pages/Quotes'
+import Delegations from './pages/Delegations'
+import MasterData from './pages/MasterData'
+import NooReport from './pages/NooReport'
 import Customers from './pages/Customers'
 import CustomerDetail from './pages/CustomerDetail'
 import Stock from './pages/Stock'
@@ -46,6 +54,9 @@ function Protected({ children }) {
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth()
+  const { showToast } = useUi()
+  const onSynced = useCallback((count) => showToast(`${count} data offline berhasil disinkronkan`), [showToast])
+  useDraftAutoSync(isAuthenticated, onSynced)
 
   return (
     <>
@@ -57,6 +68,13 @@ function AppRoutes() {
           <Route path="/leads" element={<Protected><Leads /></Protected>} />
           <Route path="/leads/new" element={<Protected><NewLead /></Protected>} />
           <Route path="/canvassing" element={<Protected><Canvassing /></Protected>} />
+          <Route path="/activities" element={<Protected><Activities /></Protected>} />
+          <Route path="/quotes" element={<Protected><Quotes /></Protected>} />
+          <Route path="/delegations" element={<Protected><Delegations /></Protected>} />
+          <Route path="/reports/noo" element={<Protected><NooReport /></Protected>} />
+          <Route path="/master" element={<Protected><MasterData /></Protected>} />
+          <Route path="/quotes/new" element={<Protected><QuoteForm /></Protected>} />
+          <Route path="/quotes/:id" element={<Protected><QuoteForm /></Protected>} />
           <Route path="/customers" element={<Protected><Customers /></Protected>} />
           <Route path="/customers/:id" element={<Protected><CustomerDetail /></Protected>} />
           <Route path="/stock" element={<Protected><Stock /></Protected>} />

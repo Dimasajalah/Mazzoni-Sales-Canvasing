@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class SalesOrder extends Model
 {
     protected $fillable = [
-        'order_number', 'customer_id', 'lead_id', 'customer_po', 'salesperson_id', 'order_date',
+        'order_number', 'customer_id', 'lead_id', 'quote_id', 'customer_po', 'destination', 'distributor_customer_id',
+        'salesperson_id', 'order_date',
         'subtotal', 'discount', 'total', 'status', 'sync_status', 'epicor_order_num',
         'client_uuid', 'promo_id', 'notes',
     ];
@@ -27,6 +28,16 @@ class SalesOrder extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
+    }
+
+    public function distributor(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'distributor_customer_id');
     }
 
     public function lead(): BelongsTo

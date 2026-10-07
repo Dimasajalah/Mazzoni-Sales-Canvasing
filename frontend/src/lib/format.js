@@ -53,13 +53,74 @@ export function bucketOf(days) {
   return 3
 }
 
+export const STAGE_LABEL = { LEAD: 'Lead', OPPORTUNITY: 'Opportunity', QUOTE: 'Quote' }
+
+// Warna mengikuti prototype tim functional: Lead oranye, Opportunity biru, Quote kuning
 export function stageColor(stage) {
   const s = String(stage || '').toUpperCase()
-  if (s === 'LEAD') return 'var(--blue)'
-  if (s === 'OPPORTUNITY') return 'var(--orange)'
+  if (s === 'LEAD') return 'var(--orange)'
+  if (s === 'OPPORTUNITY') return 'var(--blue)'
   if (s === 'QUOTE') return 'var(--amber)'
-  if (s === 'LOST') return 'var(--pink)'
   return 'var(--mut)'
+}
+
+export function winLossMeta(winLoss) {
+  const s = String(winLoss || 'OPEN').toUpperCase()
+  if (s === 'WIN') return { label: 'Win', color: 'var(--green)' }
+  if (s === 'LOSE') return { label: 'Lose', color: 'var(--pink)' }
+  return { label: 'Open', color: 'var(--mut)' }
+}
+
+/**
+ * Pipeline Customer (hasil meeting Okt 2026, poin 6): 8 status linear, menggantikan Stage+Status
+ * lama sebagai acuan utama. Warna & label persis sama dengan LeadTaskService::STATUS_CUSTOMER_STEPS
+ * di backend, supaya badge di sini dan bar dashboard konsisten.
+ */
+export const STATUS_CUSTOMER_STEPS = [
+  ['LEAD', 'Lead', 'var(--mut)'],
+  ['PROSPEK', 'Prospek', 'var(--orange2)'],
+  ['BRAND_AWARENESS', 'Brand Awareness', 'var(--blue)'],
+  ['SAMPLING', 'Sampling', '#7C5CFC'],
+  ['QUOTATION', 'Quotation', 'var(--amber)'],
+  ['WIN', 'Win', 'var(--green)'],
+  ['LOSE', 'Lose', 'var(--pink)'],
+  ['DISTRIBUTION', 'Distribution', '#0B7A46'],
+]
+
+export const STATUS_CUSTOMER_LABEL = Object.fromEntries(STATUS_CUSTOMER_STEPS.map(([k, label]) => [k, label]))
+
+export function statusCustomerMeta(status) {
+  const s = String(status || 'PROSPEK').toUpperCase()
+  const found = STATUS_CUSTOMER_STEPS.find(([k]) => k === s)
+  return { label: found ? found[1] : s, color: found ? found[2] : 'var(--mut)' }
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+
+export function fmtDate(iso) {
+  if (!iso) return '—'
+  const [y, m, d] = String(iso).slice(0, 10).split('-')
+  if (!y || !m || !d) return String(iso)
+  return `${Number(d)} ${MONTHS[Number(m) - 1]} ${y}`
+}
+
+/** Selisih hari dari hari ini (lokal) ke tanggal YYYY-MM-DD. Negatif = sudah lewat. */
+export function daysFromToday(iso) {
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number)
+  const target = new Date(y, m - 1, d)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.round((target - today) / 86400000)
+}
+
+/** Label jadwal tugas: Belum dijadwalkan / Jadwal: dd Mmm / Terlambat n hari */
+export function dueMeta(iso) {
+  if (!iso) return { label: 'Belum dijadwalkan', color: 'var(--mut)' }
+  const d = daysFromToday(iso)
+  if (d < 0) return { label: `Terlambat ${-d} hari`, color: 'var(--pink)' }
+  if (d === 0) return { label: 'Jadwal hari ini', color: 'var(--amber)' }
+  if (d === 1) return { label: 'Jadwal besok', color: 'var(--green)' }
+  return { label: `Jadwal: ${fmtDate(iso)}`, color: 'var(--green)' }
 }
 
 export function listOf(data) {

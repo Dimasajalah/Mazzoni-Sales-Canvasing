@@ -15,19 +15,20 @@ const DEFAULT_STEPS = [
 export default function Tracker() {
   const loc = useLocation()
   const [orders, setOrders] = useState([])
+  const customerId = loc.state?.customerId || null
   const [orderId, setOrderId] = useState(loc.state?.orderId || '')
   const [tracker, setTracker] = useState(null)
   const { showToast } = useUi()
 
   useEffect(() => {
-    getOrders({})
+    getOrders(customerId ? { customer_id: customerId, per_page: 100 } : {})
       .then((d) => {
         const list = listOf(d)
         setOrders(list)
         if (!orderId && list[0]) setOrderId(String(list[0].id))
       })
       .catch((e) => showToast(e.message, { warn: true }))
-  }, [showToast])
+  }, [showToast, customerId])
 
   useEffect(() => {
     if (!orderId) return
@@ -50,7 +51,11 @@ export default function Tracker() {
   return (
     <Screen>
       <h1 className="title">Order Tracker</h1>
-      <p className="sub">Order → Shipment → Invoice → Payment</p>
+      <p className="sub">
+        Order → Shipment → Invoice → Payment
+        {customerId && orders[0]?.customer?.name ? ` · ${orders[0].customer.name}` : ''}
+      </p>
+      {customerId && orders.length === 0 ? <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>Customer ini belum punya order.</div> : null}
       <div className="field">
         <label>Sales Order</label>
         <select value={orderId} onChange={(e) => setOrderId(e.target.value)}>

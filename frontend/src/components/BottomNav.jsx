@@ -1,4 +1,7 @@
+//frontend/src/components/BottomNav.jsx
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { canOrder } from '../lib/roles'
 
 const ICONS = {
   home: <path d="M4 12l8-7 8 7v8H4z" />,
@@ -60,9 +63,10 @@ export function BottomNav() {
 export function Fab() {
   const loc = useLocation()
   const nav = useNavigate()
+  const { user } = useAuth()
   let action = null
-  if (loc.pathname.startsWith('/leads')) action = () => nav('/leads/new')
-  if (loc.pathname.startsWith('/orders') && !loc.pathname.includes('/new'))
+  if (/^\/leads\/?$/.test(loc.pathname)) action = () => nav('/leads/new')
+  if (loc.pathname.startsWith('/orders') && !loc.pathname.includes('/new') && canOrder(user))
     action = () => nav('/orders/new')
 
   if (!action) return null
