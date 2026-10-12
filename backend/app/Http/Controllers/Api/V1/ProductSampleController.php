@@ -36,14 +36,33 @@ class ProductSampleController extends Controller
             'lead_task_id' => ['nullable', 'exists:lead_tasks,id'],
             'product_name' => ['nullable', 'string', 'max:255'],
             'product_group' => ['required', 'string', 'max:100'],
-            'qty' => ['required', 'integer', 'min:1'], // gram
-            'batch_number' => ['required', 'string', 'max:100'],
+            'qty' => ['required', 'integer', 'min:1'], // gram = Package Size (gram) di form Pemberian Sample
+            // Form Pemberian Sample (dokumen hal. 28) tidak punya kolom Batch (nomor batch ditulis di Comment):
+            // wajib hanya bila Part tidak dikirim (form Pengajuan Sample lama).
+            'batch_number' => ['required_without:part', 'nullable', 'string', 'max:100'],
+            'part' => ['nullable', 'string', 'max:100'],
+            'rev' => ['nullable', 'string', 'max:50'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'qty_given' => ['nullable', 'string', 'max:50'],
             'flavor_variant' => ['nullable', 'in:BBQ,Red Hot,Mayonaise'],
             'version' => ['nullable', 'integer', 'min:1'],
             'notes' => ['nullable', 'string'],
         ]);
 
+        // Form Pemberian Sample tidak mengirim Batch: pastikan kuncinya tetap ada (nilai kosong) bagi service.
+        $data['batch_number'] = $data['batch_number'] ?? null;
+
         $sample = $this->service->create($data, $request->user());
+
+        // Identitas produk Pemberian Sample disimpan langsung, supaya tidak bergantung pada kolom yang
+        // dipetakan service.
+        $identity = array_filter(
+            \Illuminate\Support\Arr::only($data, ['part', 'rev', 'description', 'qty_given']),
+            fn ($v) => $v !== null && $v !== ''
+        );
+        if ($identity) {
+            $sample->update($identity);
+        }
 
         return ApiResponse::success($sample, 'Pengajuan sample berhasil dicatat', 201);
     }

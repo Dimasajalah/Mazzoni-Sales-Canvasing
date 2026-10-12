@@ -5,14 +5,29 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Visit extends Model
 {
     protected $fillable = [
-        'lead_id', 'customer_id', 'salesperson_id', 'checkin_at', 'checkin_latitude', 'checkin_longitude',
-        'checkin_accuracy', 'checkin_distance', 'checkout_at', 'checkout_latitude', 'checkout_longitude',
-        'duration_minutes', 'visit_result', 'notes',
+        'lead_id',
+        'customer_id',
+        'salesperson_id',
+        'checkin_at',
+        'checkin_latitude',
+        'checkin_longitude',
+        'checkin_accuracy',
+        'checkin_distance',
+        'checkout_at',
+        'checkout_latitude',
+        'checkout_longitude',
+        'duration_minutes',
+        'visit_result',
+        'notes',
+        'checkin_photo_path',
     ];
+
+    protected $appends = ['checkin_photo_url'];
 
     protected function casts(): array
     {
@@ -47,5 +62,12 @@ class Visit extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(VisitActivity::class);
+    }
+
+    public function getCheckinPhotoUrlAttribute(): ?string
+    {
+        return $this->checkin_photo_path
+            ? Storage::disk('public')->url($this->checkin_photo_path)
+            : null;
     }
 }

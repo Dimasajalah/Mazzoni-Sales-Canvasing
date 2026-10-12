@@ -17,6 +17,7 @@ class ProductSample extends Model
     protected $fillable = [
         'customer_id', 'lead_id', 'lead_task_id', 'salesperson_id',
         'product_name', 'product_group', 'flavor_variant', 'version', 'qty', 'batch_number', 'notes',
+        'part', 'rev', 'description', 'qty_given',
         'status', 'delivered_at',
     ];
 

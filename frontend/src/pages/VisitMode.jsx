@@ -34,6 +34,8 @@ export default function VisitMode() {
   // semua, dia bisa buat penawarannya dari situ").
   const [lead, setLead] = useState(loc.state?.lead || null)
   const [checkedInAt, setCheckedInAt] = useState(loc.state?.checkedInAt || null)
+  // Dibuka dari Choose Activity: langsung ke form yang dipilih ('brand' atau 'conclude'); dibersihkan setelah selesai.
+  const [openView, setOpenView] = useState(loc.state?.openView || null)
 
   const visitId = loc.state?.visitId || routeId
   // useMemo: sebelumnya objek Date dibuat ulang tiap render sehingga interval & GPS diulang terus
@@ -106,7 +108,7 @@ export default function VisitMode() {
       </div>
 
       {lead && (
-        <>
+        <div className="vm-task">
           <div className="section-h">Tugas Canvassing</div>
           {/* key wajib ada: lihat catatan yang sama di Leads.jsx openLead() — tanpa ini, panel
               tetap menampilkan tugas LAMA setelah reloadVisit() memperbarui `lead`, karena
@@ -117,12 +119,16 @@ export default function VisitMode() {
             lead={lead}
             task={lead.current_task}
             onChanged={reloadVisit}
-            onClose={reloadVisit}
+            onClose={() => {
+              setOpenView(null)
+              reloadVisit()
+            }}
             showToast={showToast}
             hideCheckin
-          />
-        </>
-      )}
+            initialView={openView || undefined}
+            />
+          </div>
+        )}
 
       <Field label="Hasil kunjungan">
         <select value={result} onChange={(e) => setResult(e.target.value)}>

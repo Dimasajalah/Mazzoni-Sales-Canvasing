@@ -1,4 +1,6 @@
-/* Minimal global reset — visual styles live in styles/prototype.css */
+/* Index.css: Minimal global reset — visual styles live in styles/prototype.css */
+@import "@fontsource-variable/inter";
+
 html, body, #root {
   margin: 0;
   min-height: 100%;

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { getCustomers, getCustomerPromoHistory, getPromos, offerPromo } from '../api'
 import { Card, Chips, Screen } from '../components/ui'
 import { useUi } from '../context/UiContext'
-import { listOf } from '../lib/format'
+import { fmtDate, listOf } from '../lib/format'
 
 const FILTERS = [
   { value: 'ALL', label: 'Semua' },
@@ -54,7 +54,7 @@ export default function Promo() {
         <Card key={p.id || p.promo_code} style={{ marginBottom: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
             <div>
-              <span className="badge" style={{ background: 'rgba(238,106,10,.15)', color: 'var(--orange)' }}>
+              <span className="badge" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}>
                 {p.promo_code || p.code}
               </span>
               <div style={{ fontWeight: 800, marginTop: 8 }}>{p.name || p.n}</div>
@@ -62,7 +62,7 @@ export default function Promo() {
                 {p.description || p.m}
               </div>
               <div className="muted" style={{ fontSize: 10, marginTop: 6 }}>
-                s/d {p.end_date || p.v} · {p.customer_group || p.e || 'Semua'}
+              s/d {p.end_date ? fmtDate(p.end_date) : p.v} · {p.customer_group || p.e || 'Semua'}
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-
+//frontend/src/components/PhotoUpload.jsx
 export function PhotoUpload({ files, onChange, max = 6 }) {
   const camRef = useRef(null)
   const galRef = useRef(null)

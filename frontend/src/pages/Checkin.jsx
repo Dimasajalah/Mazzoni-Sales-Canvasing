@@ -1,5 +1,5 @@
 //frontend/src/pages/Checkin.jsx
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { checkinVisit, getCustomers, getLead } from '../api'
 import CheckinMap from '../components/CheckinMap'
@@ -8,7 +8,7 @@ import { useUi } from '../context/UiContext'
 import { useGeolocation } from '../hooks/useGeolocation'
 import { haversineMeters, listOf } from '../lib/format'
 
-const RADIUS = 500
+const RADIUS = 150
 
 export default function Checkin() {
   const loc = useLocation()
@@ -25,6 +25,18 @@ export default function Checkin() {
   const [customers, setCustomers] = useState([])
   const [customerId, setCustomerId] = useState(loc.state?.customerId || '')
   const [busy, setBusy] = useState(false)
+  const [photo, setPhoto] = useState(null)
+  const camRef = useRef(null)
+  const photoUrl = useMemo(
+    () => (photo && typeof URL.createObjectURL === 'function' ? URL.createObjectURL(photo) : null),
+    [photo],
+  )
+  useEffect(
+    () => () => {
+      if (photoUrl && typeof URL.revokeObjectURL === 'function') URL.revokeObjectURL(photoUrl)
+    },
+    [photoUrl],
+  )
 
   useEffect(() => {
     if (leadId) {
@@ -67,6 +79,10 @@ export default function Checkin() {
       showToast(leadId ? 'Aktifkan GPS' : 'Pilih customer & aktifkan GPS', { warn: true })
       return
     }
+    if (!photo) {
+      showToast('Foto toko wajib diambil', { warn: true })
+      return
+    }
     setBusy(true)
     try {
       const visit = await checkinVisit({
@@ -74,18 +90,23 @@ export default function Checkin() {
         latitude: coords.lat,
         longitude: coords.lng,
         accuracy: coords.accuracy,
+        photo,
       })
       const valid = visit?.valid ?? visit?.within_radius ?? !far
       if (!valid) {
         showToast(`Di luar radius (${Math.round(dist)} m)`, { warn: true })
       } else {
-        showToast('Check-in berhasil')
+        showToast('Check-in successful')
       }
       const visitId = visit?.id || visit?.visit_id
-      nav(`/visit-mode/${visitId}`, {
+      // Check-in ulang ke lead yang pernah dikunjungi -> Choose Activity (dokumen hal. 24);
+      // kunjungan pertama langsung ke Visit Mode (tugas aktif).
+      const returning = (visit?.previous_visits ?? 0) > 0 && Boolean(visit?.lead || lead)
+      nav(returning ? `/choose-activity/${visitId}` : `/visit-mode/${visitId}`, {
         replace: true,
         state: {
           visitId,
+          visit,
           customer,
           lead: visit?.lead || lead,
           distance: visit?.distance ?? dist,
@@ -99,15 +120,32 @@ export default function Checkin() {
     }
   }
 
+  const fixedTarget = !!leadId || !!loc.state?.customerId
+  const matched = dist != null && !far
+  const targetName = leadId ? lead?.business_name : customer?.name
+  const targetMeta = [target?.business_type || target?.customer_group, target?.city].filter(Boolean).join(', ')
+  const ready = !!coords && !!target && !far && !!photo
+  const statusText =
+    dist != null
+      ? `${Math.round(dist)} m from registered coordinates${
+          coords?.accuracy ? ` · accuracy ±${Math.round(coords.accuracy)} m` : ''
+        }`
+      : target && !target.latitude
+        ? 'Lokasi toko belum terdaftar'
+        : 'Menunggu GPS…'
+
   return (
     <Screen noNav>
-      <TopBar title="Check-in Kunjungan" backTo="/visits" />
-      {leadId ? (
-        <div className="field">
-          <label>Lead</label>
-          <input value={lead?.business_name || 'Memuat…'} readOnly />
-        </div>
-      ) : (
+      <TopBar
+        title={
+          <>
+            <div>Visit Check-in</div>
+            <div className="tt-sub">{[targetName || 'Memuat…', targetMeta].filter(Boolean).join(' · ')}</div>
+          </>
+        }
+      />
+
+      {!fixedTarget && (
         <div className="field">
           <label>Customer</label>
           <select value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
@@ -119,36 +157,71 @@ export default function Checkin() {
           </select>
         </div>
       )}
-      <div className="map">
-        <div className="gps">{gpsLoading ? 'GPS…' : coords ? 'GPS aktif' : 'GPS off'}</div>
+
+      <div className="ck-map">
         <CheckinMap
           userCoords={coords}
           customerCoords={target?.latitude ? { lat: Number(target.latitude), lng: Number(target.longitude) } : null}
+          radius={RADIUS}
+          height={210}
         />
-        <div className="coord">
-          {coords ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : 'Menunggu GPS…'}
-        </div>
+        {!coords && <div className="ck-wait">{gpsLoading ? 'Mencari GPS…' : 'Menunggu GPS…'}</div>}
+        <span className="ck-live">Live GPS position</span>
       </div>
-      <div className="card" style={{ marginBottom: 12 }}>
-        <div className="muted" style={{ fontSize: 11 }}>Jarak ke {leadId ? 'lead' : 'customer'}</div>
-        <div style={{ fontSize: 28, fontWeight: 800, color: far ? 'var(--pink)' : 'var(--green)' }}>
-          {dist == null ? '—' : `${Math.round(dist)} m`}
+
+      <div className={`ck-status${far ? ' bad' : matched ? ' ok' : ''}`}>
+        <span className="ck-st-ic">{far ? '!' : matched ? '✓' : '…'}</span>
+        <div className="ck-st-body">
+          <div className="ck-st-t">
+            {far ? 'Too far from store' : matched ? 'Location matched to store' : 'Waiting for location'}
+          </div>
+          <div className="ck-st-s">{statusText}</div>
         </div>
-        <div className="muted" style={{ fontSize: 11 }}>
-          Radius validasi {RADIUS} m · {far ? 'Di luar radius' : 'Dalam radius'}
-        </div>
+        <button type="button" className="ck-refresh" aria-label="Refresh GPS" onClick={() => refresh().catch(() => {})}>
+          ↻
+        </button>
       </div>
-      <button type="button" className="btn ghost" style={{ marginBottom: 8 }} onClick={() => refresh()}>
-        Refresh GPS
+
+      <div className="ck-card">
+        <div className="ck-card-t">Store Photo *</div>
+        <button type="button" className={`ck-cam${photoUrl ? ' has' : ''}`} onClick={() => camRef.current?.click()}>
+          {photoUrl ? (
+            <img src={photoUrl} alt="Store photo" />
+          ) : (
+            <>
+              <b>Tap to capture store photo</b>
+              <small>Required for check-in — storefront or signage, taken live (gallery upload not allowed)</small>
+            </>
+          )}
+        </button>
+        {photo && (
+          <button type="button" className="ck-retake" onClick={() => camRef.current?.click()}>
+            Retake photo
+          </button>
+        )}
+        <input
+          ref={camRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) setPhoto(f)
+            e.target.value = ''
+          }}
+        />
+      </div>
+
+      <div className="ck-info">
+        Check-in is enabled once you're within {RADIUS} m of the store's registered coordinates and the photo is
+        captured. Both are logged to the visit record.
+      </div>
+
+      <button type="button" className="btn ok" disabled={busy || !ready} onClick={doCheckin}>
+        {busy ? 'Check-in…' : 'Check In'}
       </button>
-      <button type="button" className="btn" disabled={busy || !coords || far || (leadId && !lead)} onClick={doCheckin}>
-        {busy ? 'Check-in…' : far ? 'Terlalu jauh' : 'Check-in'}
-      </button>
-      {far ? (
-        <p className="sub" style={{ textAlign: 'center' }}>
-          Dekati lokasi {leadId ? 'lead' : 'customer'} untuk check-in valid.
-        </p>
-      ) : null}
+      <p className="ck-note">After check-in, choose the activity for this visit on the next screen.</p>
     </Screen>
   )
 }

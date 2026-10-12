@@ -69,12 +69,12 @@ export default function Tracker() {
       <Card style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontWeight: 800 }}>Progress</div>
-          <div className="pct" style={{ color: 'var(--orange)', fontWeight: 800 }}>
+          <div className="pct" style={{ color: 'var(--green)', fontWeight: 800 }}>
             {pct}%
           </div>
         </div>
         <div className="prog">
-          <span style={{ width: `${pct}%`, background: 'var(--orange)' }} />
+          <span style={{ width: `${pct}%`, background: 'var(--green)' }} />
         </div>
       </Card>
       {steps.map((s, i) => {

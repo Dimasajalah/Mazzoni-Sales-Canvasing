@@ -2,7 +2,7 @@
 // Kartu prospek: bar warna & badge dari status_customer (Pipeline Customer, hasil meeting Okt 2026).
 import { dueMeta, fmtRp, statusCustomerMeta } from '../lib/format'
 
-export function LeadCard({ lead, onClick }) {
+export function LeadCard({ lead, onClick, onDetail }) {
   const st = statusCustomerMeta(lead.status_customer)
   const task = lead.current_task
   const closed = lead.status_customer === 'WIN' || lead.status_customer === 'LOSE' || lead.status_customer === 'DISTRIBUTION'
@@ -20,7 +20,7 @@ export function LeadCard({ lead, onClick }) {
           {lead.owner_name || lead.phone || '—'} · {taskLine}
         </div>
         <div className="badges">
-          <span className="badge" style={{ background: `${st.color}22`, color: st.color }}>
+        <span className="badge" style={{ background: `${st.color}22`, color: st.ink }}>
             {st.label}
           </span>
           {due && !closed ? (
@@ -32,6 +32,18 @@ export function LeadCard({ lead, onClick }) {
       </div>
       <div className="r" style={{ color: value === '—' ? 'var(--mut)' : 'var(--green)' }}>
         {value}
+        {onDetail && lead.customer_id ? (
+          <button
+            type="button"
+            className="detail-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDetail()
+            }}
+          >
+            Detail ›
+          </button>
+        ) : null}
       </div>
     </div>
   )

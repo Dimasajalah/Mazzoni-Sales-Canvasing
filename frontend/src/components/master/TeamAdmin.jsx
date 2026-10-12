@@ -78,7 +78,7 @@ export default function TeamAdmin({ canEdit, currentUserId, showToast }) {
               </div>
             </div>
             {u.role === 'sales' && (
-              <span className="badge" style={{ background: 'rgba(42,111,214,.14)', color: 'var(--blue)', alignSelf: 'flex-start' }}>
+              <span className="badge" style={{ background: 'var(--blue-soft)', color: 'var(--blue)', alignSelf: 'flex-start' }}>
                 {SALES_TYPE_LABEL[u.sales_type] || u.sales_type}
               </span>
             )}

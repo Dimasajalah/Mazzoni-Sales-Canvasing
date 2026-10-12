@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TaskTemplate extends Model
 {
     protected $fillable = [
-        'task_set_id', 'seq', 'name', 'task_type', 'stage', 'required_role',
+        'task_set_id', 'seq', 'code', 'name', 'task_type', 'stage', 'required_role',
         'mandatory', 'needs_schedule', 'is_closing', 'actions', 'pipeline_step', 'active',
     ];
 

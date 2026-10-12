@@ -87,7 +87,7 @@ export default function Quotes() {
                   </span>
                 </div>
               </div>
-              <div className="r" style={{ color: 'var(--orange)' }}>
+              <div className="r" style={{ color: 'var(--text)' }}>
                 {fmtRp(q.total)}
               </div>
             </div>

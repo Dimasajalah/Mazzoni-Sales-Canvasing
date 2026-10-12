@@ -111,7 +111,23 @@ class VisitService
             'checkin_longitude' => $data['longitude'],
             'checkin_accuracy' => $data['accuracy'] ?? null,
             'checkin_distance' => round($distance, 2),
-        ]);
+            ]);
+    
+            // Foto bukti check-in (dokumen hal. 22). Di backend masih opsional sampai tes lama
+            // diperbarui; aplikasi mewajibkannya lewat tombol Check In yang terkunci tanpa foto.
+            if (! empty($data['photo'])) {
+                $visit->update([
+                    'checkin_photo_path' => $data['photo']->store("visits/{$visit->id}", 'public'),
+                ]);
+            }
+    
+            // Foto bukti check-in (dokumen hal. 22). Di backend masih opsional sampai tes lama
+            // diperbarui; aplikasi mewajibkannya lewat tombol Check In yang terkunci tanpa foto.
+            if (! empty($data['photo'])) {
+                $visit->update([
+                    'checkin_photo_path' => $data['photo']->store("visits/{$visit->id}", 'public'),
+                ]);
+            }
 
         VisitActivity::create([
             'visit_id' => $visit->id,
@@ -123,7 +139,11 @@ class VisitService
 
         $this->auditLogService->log($user->id, 'visit.checkin', Visit::class, $visit->id, null, $visit->toArray());
 
-        return $visit->load([...self::WITH, 'activities']);
+        $previous = Visit::where($field, $target->id)->where('id', '<', $visit->id)->count();
+        $visit->load([...self::WITH, 'activities']);
+        $visit->setAttribute('previous_visits', $previous);
+
+        return $visit;
     }
 
     public function checkOut(Visit $visit, array $data, User $user): Visit

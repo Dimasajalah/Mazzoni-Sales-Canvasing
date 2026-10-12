@@ -80,7 +80,7 @@ export default function NooReport() {
             <Stat value={totals?.registered ?? 0} label="Terdaftar" color="var(--blue)" />
             <Stat value={totals?.won ?? 0} label="NOO (Win)" color="var(--green)" />
             <Stat value={totals?.lost ?? 0} label="Lose" color="var(--pink)" />
-            <Stat value={totals?.win_rate == null ? '—' : `${totals.win_rate}%`} label="Win rate" color="var(--orange)" />
+            <Stat value={totals?.win_rate == null ? '—' : `${totals.win_rate}%`} label="Win rate" color="var(--green)" />
           </div>
 
           {rows.length === 0 ? (

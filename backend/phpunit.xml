@@ -30,7 +30,7 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="DATA_SOURCE" value="staging"/>
-        <env name="VISIT_RADIUS_METERS" value="500"/>
+        <env name="VISIT_RADIUS_METERS" value="150"/>
         <env name="FRONTEND_URL" value="http://localhost:5173"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

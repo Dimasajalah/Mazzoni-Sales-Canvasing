@@ -7,6 +7,8 @@ use App\Models\Lead;
 use App\Models\TaskSet;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -147,5 +149,66 @@ class VisitCheckinTest extends TestCase
 
         $this->postJson('/api/v1/visits/checkin', ['lead_id' => $lead->id, 'latitude' => -7.25, 'longitude' => 112.75])
             ->assertStatus(422)->assertJsonValidationErrors('lead_id');
+    }
+
+    
+    /** Dokumen hal. 22: radius check-in 150 m. 389 m ke selatan harus ditolak. */
+    public function test_checkin_rejected_beyond_150_meters(): void
+    {
+        $user = User::factory()->create(['role' => 'sales', 'active' => true]);
+        Sanctum::actingAs($user);
+
+        $customer = Customer::create([
+            'customer_code' => 'C-TEST-150',
+            'name' => 'PT Test 150',
+            'city' => 'Surabaya',
+            'latitude' => -7.2575,
+            'longitude' => 112.7521,
+            'salesperson_id' => $user->id,
+            'active' => true,
+            'sync_status' => 'NOT_REQUIRED',
+        ]);
+
+        $this->postJson('/api/v1/visits/checkin', [
+            'customer_id' => $customer->id,
+            'latitude' => -7.2610,
+            'longitude' => 112.7521,
+            'accuracy' => 8,
+        ])->assertStatus(422)->assertJsonPath('success', false);
+
+        $this->assertDatabaseCount('visits', 0);
+    }
+
+    /** Foto bukti check-in tersimpan di disk public dan alamatnya ikut di respons. */
+    public function test_checkin_stores_the_photo_when_sent(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create(['role' => 'sales', 'active' => true]);
+        Sanctum::actingAs($user);
+
+        $customer = Customer::create([
+            'customer_code' => 'C-TEST-PHOTO',
+            'name' => 'PT Test Foto',
+            'city' => 'Surabaya',
+            'latitude' => -7.2575,
+            'longitude' => 112.7521,
+            'salesperson_id' => $user->id,
+            'active' => true,
+            'sync_status' => 'NOT_REQUIRED',
+        ]);
+
+        $response = $this->post('/api/v1/visits/checkin', [
+            'customer_id' => $customer->id,
+            'latitude' => -7.2570,
+            'longitude' => 112.7521,
+            'accuracy' => 8,
+            'photo' => UploadedFile::fake()->image('toko.jpg'),
+        ], ['Accept' => 'application/json']);
+
+        $response->assertCreated();
+        $path = $response->json('data.checkin_photo_path');
+        $this->assertNotEmpty($path);
+        $this->assertTrue(Storage::disk('public')->exists($path));
+        $this->assertNotNull($response->json('data.checkin_photo_url'));
     }
 }

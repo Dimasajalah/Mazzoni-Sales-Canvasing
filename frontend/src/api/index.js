@@ -141,6 +141,39 @@ export const getCustomers = (params = {}) => {
 export const getCustomer = (id) => apiGet(`/customers/${id}`).then(unwrap)
 export const updateCustomer = (id, payload) => apiPatch(`/customers/${id}`, payload).then(unwrap)
 
+export const getCustomerActivity = (id, params = {}) => {
+  const q = new URLSearchParams(params).toString()
+  return apiGet(`/customers/${id}/activity${q ? `?${q}` : ''}`).then(unwrap)
+}
+
+export const getPicTargets = (customerId) => apiGet(`/customers/${customerId}/pic-targets`).then(unwrap)
+
+export const saveQuoteHeader = (id, payload) => apiPost(`/quotes/${id}/header`, payload).then(unwrap)
+
+export const getQuotePdf = (id) => apiGet(`/quotes/${id}/pdf`).then(unwrap)
+
+export const saveQuoteLines = (id, lines) => apiPost(`/quotes/${id}/lines/replace`, { lines }).then(unwrap)
+
+export const getApprovedSamples = (quoteId) => apiGet(`/quotes/${quoteId}/approved-samples`).then(unwrap)
+
+export const searchQuoteProducts = (quoteId, params = {}) => {
+  const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString()
+  return apiGet(`/quotes/${quoteId}/product-search${qs ? `?${qs}` : ''}`).then(unwrap)
+}
+
+export const getLeadPromos = (leadId) => apiGet(`/leads/${leadId}/promos`).then(unwrap)
+
+export const applyLeadPromo = (leadId, payload) => apiPost(`/leads/${leadId}/promos`, payload).then(unwrap)
+
+export const removeLeadPromo = (leadId, promoRef) => apiPost(`/leads/${leadId}/promos/remove`, { promo_ref: promoRef }).then(unwrap)
+
+export const bindQuotePart = (quoteId, lineId, productId) => apiPost(`/quotes/${quoteId}/lines/${lineId}/bind-part`, { product_id: productId }).then(unwrap)
+
+export const confirmQuoteOrder = (quoteId, payload) => apiPost(`/quotes/${quoteId}/checkout`, payload).then(unwrap)
+
+export const delegatePic = (customerId, payload) =>
+  apiPost(`/customers/${customerId}/delegate-pic`, payload).then(unwrap)
+
 export const getInventory = (params = {}) => {
   const q = new URLSearchParams(params).toString()
   return apiGet(`/inventory${q ? `?${q}` : ''}`).then(unwrap)
@@ -188,7 +221,16 @@ export const getVisits = (params = {}) => {
   return apiGet(`/visits${q ? `?${q}` : ''}`).then(unwrap)
 }
 
-export const checkinVisit = (payload) => apiPost('/visits/checkin', payload).then(unwrap)
+export const checkinVisit = (payload) => {
+  const { photo, ...rest } = payload
+  if (!photo) return apiPost('/visits/checkin', rest).then(unwrap)
+  const fd = new FormData()
+  Object.entries(rest).forEach(([k, v]) => {
+    if (v != null) fd.append(k, v)
+  })
+  fd.append('photo', photo)
+  return apiForm('/visits/checkin', fd).then(unwrap)
+}
 
 export const checkoutVisit = (id, payload) =>
   apiPost(`/visits/${id}/checkout`, payload).then(unwrap)

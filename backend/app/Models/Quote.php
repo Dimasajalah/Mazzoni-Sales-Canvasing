@@ -96,6 +96,34 @@ class Quote extends Model
         );
     }
 
+    /**
+     * Follow Up Sample yang disetujui (kode alasan "Sample Cocok") untuk prospek ini: dasar chip
+     * "Pulled from Follow Up Sample N" pada Line Quotation (dokumen hal. 34). Dibuat sebagai accessor
+     * dan hanya di-append di QuoteService::find().
+     */
+    protected function sourceFollowup(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (! $this->lead_id) {
+                    return null;
+                }
+
+                $code = LeadTask::where('lead_id', $this->lead_id)
+                    ->where('conclusion', 'NEXT')
+                    ->where('reason_code', 'Sample Cocok')
+                    ->latest('id')
+                    ->value('code');
+
+                if (! $code || ! preg_match('/^GIVESMPL(\d+)$/', $code, $m)) {
+                    return null;
+                }
+
+                return ['number' => (int) $m[1], 'reason' => 'Sample Cocok'];
+            },
+        );
+    }
+
     public function lines(): HasMany
     {
         return $this->hasMany(QuoteLine::class)->orderBy('id');

@@ -99,11 +99,11 @@ describe('LeadTaskPanel', () => {
     expect(screen.queryByRole('button', { name: /Tidak tertarik/ })).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/Alasan/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/Catatan/)).not.toBeInTheDocument()
-    await waitFor(() => expect(screen.getByLabelText('Tugas berikutnya')).toHaveValue('4'))
+    await waitFor(() => expect(screen.getByLabelText('Next Task')).toHaveValue('4'))
 
-    await user.click(screen.getByRole('button', { name: 'Simpan' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(api.concludeLeadTask).toHaveBeenCalledWith(99, {
-      conclusion: 'NEXT', reason_code: 'Tertarik', next_template_id: 4, due_date: null, remark: null,
+      conclusion: 'NEXT', reason_code: 'TRTK', task_status: 'Process', next_template_id: 4, due_date: null, remark: null,
     }))
     expect(api.createJourneyEntry).not.toHaveBeenCalled()
     expect(showToast).toHaveBeenCalledWith('Brand Awareness selesai · berikutnya: Pengajuan Sample')

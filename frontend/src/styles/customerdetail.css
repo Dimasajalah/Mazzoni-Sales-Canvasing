@@ -1,0 +1,30 @@
+/* ===== 04 Customer Detail: Info (dokumen hal. 16) ===== */
+.topbar.cd-top{ margin-bottom:0; border-bottom:none; }
+.cd-chip{ flex:none; padding:5px 12px; border-radius:14px; font-size:11px; font-weight:800; }
+.cd-tabs{ display:flex; margin:0 -18px 14px; background:#FFFFFF; border-bottom:1px solid var(--stroke); }
+.cd-tabs button{ flex:1; padding:12px 0; border:none; border-bottom:2px solid transparent; background:none;
+  font-size:13.5px; font-weight:800; color:var(--faint); cursor:pointer; font-family:inherit; }
+.cd-tabs button.on{ color:var(--text); border-bottom-color:var(--primary); }
+.cd-card{ margin-bottom:12px; padding:14px; background:#FFFFFF; border:1px solid var(--stroke); border-radius:16px; }
+.cd-h{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 12px;
+  font-size:13.5px; font-weight:800; color:var(--text); }
+.cd-h span{ display:flex; align-items:center; gap:8px; }
+.cd-h svg{ color:var(--mut); flex:none; }
+.cd-pencil{ border:none; background:none; padding:4px; color:var(--blue); cursor:pointer; display:grid; }
+.cd-pipe{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.cd-pipe i{ display:block; height:6px; border-radius:3px; background:#E5E7EB; }
+.cd-pipe-l{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:8px; }
+.cd-pipe-l span{ font-size:10px; font-weight:700; color:var(--faint); text-align:center; }
+.cd-pipe-l span.on{ color:var(--text); }
+.cd-kv{ display:flex; gap:12px; align-items:flex-start; padding:10px 0; }
+.cd-kv + .cd-kv{ border-top:1px solid var(--stroke); }
+.cd-kv > svg{ flex:none; margin-top:2px; color:var(--faint); }
+.cd-kv small{ display:block; font-size:10px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:var(--faint); }
+.cd-kv b{ display:block; margin-top:2px; font-size:14px; font-weight:800; color:var(--text); }
+.cd-kv b.good{ color:var(--green); }
+.cd-note textarea{ width:100%; border-radius:12px; }
+.cd-deleg{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-bottom:12px;
+  padding:13px; border-radius:12px; border:1.5px solid var(--text); background:#FFFFFF; color:var(--text);
+  font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; }
+.cd-foot{ position:sticky; bottom:0; z-index:5; margin:16px -18px -24px; padding:12px 18px;
+  background:#FFFFFF; border-top:1px solid var(--stroke); }

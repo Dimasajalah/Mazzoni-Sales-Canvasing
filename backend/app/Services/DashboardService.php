@@ -1,5 +1,5 @@
 <?php
-
+//backend/app/Services/DashboardService.php
 namespace App\Services;
 
 use App\Models\Customer;
@@ -24,7 +24,27 @@ class DashboardService
     public function summary(User $user): array
     {
         $aging = $this->arProvider->agingSummary();
-        $topAging = $this->arProvider->agingInvoices()->take(10)->values();
+        $agingInvoices = $this->arProvider->agingInvoices();
+        $topAging = $agingInvoices->take(10)->values();
+
+        // Top 10 Outstanding: total saldo terbuka per customer + invoice tertuanya
+        $topOutstanding = $agingInvoices
+            ->groupBy('customer_id')
+            ->map(function ($rows) {
+                $first = $rows->first();
+
+                return [
+                    'id' => $first->customer_id,
+                    'name' => $first->customer?->name,
+                    'customer_code' => $first->customer?->customer_code,
+                    'balance' => $rows->sum(fn ($i) => (float) $i->balance),
+                    'days_overdue' => (int) $rows->max('days_overdue'),
+                    'invoice_count' => $rows->count(),
+                ];
+            })
+            ->sortByDesc('balance')
+            ->take(10)
+            ->values();
 
         // Pipeline 7 langkah (Prospek, Lead, Brand Awareness, Sampling, Quote, Win, Lose)
         $pipeline = $this->leadTaskService->pipelineCounts($user);
@@ -55,6 +75,7 @@ class DashboardService
             ],
             'ar' => $aging,
             'top_aging' => $topAging,
+            'top_outstanding' => $topOutstanding,
             'pipeline' => $pipeline,
             'activities' => $this->leadTaskService->summary($user),
             'active_promos' => Promotion::where('active', true)

@@ -1,14 +1,14 @@
 // frontend/src/pages/Leads.jsx
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getLeads } from '../api'
 import { LeadCard } from '../components/LeadCard'
-import LeadTaskPanel from '../components/LeadTaskPanel'
 import { Chips, Screen } from '../components/ui'
 import { useUi } from '../context/UiContext'
 import { listOf, STATUS_CUSTOMER_STEPS } from '../lib/format'
 
-// Pipeline Customer (hasil meeting Okt 2026, poin 6): 8 status linear menggantikan Stage+Status lama.
-const LABELS = [['ALL', 'Semua'], ...STATUS_CUSTOMER_STEPS.map(([key, label]) => [key, label])]
+// Pipeline mengikuti dokumen: Prospect sampai Win/Lose/Distribution. "Lead" adalah stage task, bukan tahap pipeline.
+const LABELS = [['ALL', 'Semua'], ...STATUS_CUSTOMER_STEPS.filter(([key]) => key !== 'LEAD').map(([key, label]) => [key, label])]
 
 const matches = (lead, filter) => filter === 'ALL' || lead.status_customer === filter
 
@@ -16,7 +16,8 @@ export default function Leads() {
   const [filter, setFilter] = useState('ALL')
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const { showToast, openSheet, closeSheet } = useUi()
+  const nav = useNavigate()
+  const { showToast } = useUi()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -45,27 +46,13 @@ export default function Leads() {
 
   const filtered = useMemo(() => items.filter((l) => matches(l, filter)), [items, filter])
 
-  const openLead = (lead) =>
-    openSheet(
-      'Prospek',
-      // key wajib ada: LeadTaskPanel menyimpan tugas di state internalnya sendiri (useState), yang
-      // TIDAK otomatis ter-reset kalau cuma prop `task` yang berubah (mis. lead yang sama dibuka
-      // lagi setelah tugasnya maju ke tahap berikutnya) — tanpa key beda, panel akan tetap
-      // menampilkan tugas LAMA yang sudah basi. Mengganti key memaksa React membuat instance baru.
-      <LeadTaskPanel
-        key={`${lead.id}-${lead.current_task?.id ?? 'none'}`}
-        lead={lead}
-        task={lead.current_task}
-        onChanged={load}
-        onClose={closeSheet}
-        showToast={showToast}
-      />,
-    )
+  // Revisi: kartu dibuka sebagai halaman, langsung ke Check-in (bukan sheet form).
+  const openLead = (lead) => nav('/checkin', { state: { leadId: lead.id } })
 
   return (
     <Screen>
       <h1 className="title">Leads</h1>
-      <p className="sub">Pipeline Customer: Lead · Prospek · Brand Awareness · Sampling · Quotation · Win · Lose · Distribution</p>
+      <p className="sub">Pipeline Customer: Prospek · Brand Awareness · Sampling · Quotation · Win · Lose · Distribution</p>
       <Chips options={options} value={filter} onChange={setFilter} />
       {loading ? (
         <div className="loading-center">Memuat leads…</div>
@@ -74,7 +61,14 @@ export default function Leads() {
           Tidak ada prospek pada kategori ini.
         </div>
       ) : (
-        filtered.map((l) => <LeadCard key={l.id} lead={l} onClick={() => openLead(l)} />)
+        filtered.map((l) => (
+          <LeadCard
+            key={l.id}
+            lead={l}
+            onClick={() => openLead(l)}
+            onDetail={() => nav(`/customers/${l.customer_id}`)}
+          />
+        ))
       )}
     </Screen>
   )

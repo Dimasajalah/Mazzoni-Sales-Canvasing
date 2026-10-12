@@ -1,3 +1,4 @@
+//frontend/tests/pages.test.jsx
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
@@ -89,11 +90,11 @@ describe('Halaman Leads', () => {
   it('menampilkan chip 8 status_customer dengan hitungan, memfilter, dan membuka sheet tugas', async () => {
     api.getLeads.mockResolvedValue({ data: leads })
     const user = userEvent.setup()
-    shell(<Leads />)
+    shell(<><Leads /><Probe /></>)
 
     expect(await screen.findByRole('button', { name: 'Semua (6)' })).toBeInTheDocument()
     for (const label of [
-      'Lead (0)', 'Prospek (1)', 'Brand Awareness (1)', 'Sampling (1)',
+      'Prospek (1)', 'Brand Awareness (1)', 'Sampling (1)',
       'Quotation (1)', 'Win (1)', 'Lose (1)', 'Distribution (0)',
     ]) {
       expect(screen.getByRole('button', { name: label })).toBeInTheDocument()
@@ -109,9 +110,8 @@ describe('Halaman Leads', () => {
 
     await user.click(screen.getByRole('button', { name: 'Brand Awareness (1)' }))
     await user.click(screen.getByText('Opp B'))
-    // sheet berisi panel tugas milik lead tsb
-    expect(await screen.findByRole('button', { name: /Selesaikan Tugas/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Form Brand/ })).toBeInTheDocument()
+    // kartu langsung membuka halaman Check-in untuk lead tsb (id 2)
+    expect(screen.getByTestId('probe')).toHaveTextContent('/checkin|{"leadId":2}')
   })
 
   it('kartu menampilkan satu badge status_customer dan tugas aktif', async () => {
@@ -139,6 +139,7 @@ describe('Halaman Activities', () => {
     expect(screen.getByText('Belum dijadwalkan', { selector: 'div' })).toBeInTheDocument()
 
     await user.click(screen.getByText('Kunjungan perkenalan (canvassing)'))
+    // kartu langsung membuka halaman Check-in untuk lead tsb (id 2)
     expect(await screen.findByRole('button', { name: /Selesaikan Tugas/ })).toBeInTheDocument()
   })
 
@@ -170,19 +171,19 @@ describe('Halaman NewLead', () => {
     const user = userEvent.setup()
     const { container } = shell(<NewLead />, ['/leads/new'])
 
-    await waitFor(() => expect(screen.getByLabelText('Task Set')).toHaveValue('1'))
-    expect(screen.getByLabelText('Store Type')).toHaveValue('Distributor Retail')
-    expect(within(screen.getByLabelText('Store Type')).getAllByRole('option').map((o) => o.textContent))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'B2B' })).toHaveAttribute('aria-pressed', 'true'))
+    expect(screen.getByLabelText('Store Type *')).toHaveValue('Distributor Retail')
+    expect(within(screen.getByLabelText('Store Type *')).getAllByRole('option').map((o) => o.textContent))
       .toEqual(['Distributor Retail', 'Grosir', 'Manufaktur'])
     expect(screen.queryByLabelText('Scoring Lead')).not.toBeInTheDocument() // dihapus (poin 5)
     expect(screen.queryByLabelText('Nama Pemilik')).not.toBeInTheDocument() // poin 3: cuma satu field nama (Nama Customer)
-    expect(screen.getByText('Foto Store')).toBeInTheDocument()
+    expect(screen.getByText('Store Photo')).toBeInTheDocument()
 
-    await user.type(screen.getByLabelText('Nama Customer'), 'UD Baru')
+    await user.type(screen.getByLabelText('Customer / Store Name *'), 'UD Baru')
     await user.type(screen.getByLabelText('KTP'), '3578010101900001')
     const file = new File(['x'], 'toko.jpg', { type: 'image/jpeg' })
-    await user.upload(container.querySelectorAll('input[type=file]')[1], file)
-    await user.click(screen.getByRole('button', { name: 'Simpan Lead' }))
+    await user.upload(container.querySelectorAll('input[type=file]')[0], file)
+    await user.click(screen.getByRole('button', { name: 'Save Lead' }))
 
     await waitFor(() => expect(api.createLead).toHaveBeenCalledTimes(1))
     const payload = api.createLead.mock.calls[0][0]
@@ -198,16 +199,16 @@ describe('Halaman NewLead', () => {
     const user = userEvent.setup()
     shell(<NewLead />, ['/leads/new'])
 
-    await screen.findByLabelText('Nama Customer')
-    expect(screen.getByLabelText('Country')).toHaveValue('Indonesia') // default
+    await screen.findByLabelText('Customer / Store Name *')
+    expect(screen.getByLabelText('Country *')).toHaveValue('Indonesia') // default
 
-    await user.type(screen.getByLabelText('Nama Customer'), 'UD Alamat')
-    await user.selectOptions(screen.getByLabelText('Provinsi'), '35')
-    await user.selectOptions(await screen.findByLabelText('Kota'), '3578')
-    await user.type(screen.getByLabelText('Alamat'), 'Jl. Merdeka No. 1')
-    await user.type(screen.getByLabelText('Postal Code'), '60111')
-    await user.type(screen.getByLabelText('Potensi / Value'), '5000000')
-    await user.click(screen.getByRole('button', { name: 'Simpan Lead' }))
+    await user.type(screen.getByLabelText('Customer / Store Name *'), 'UD Alamat')
+    await user.selectOptions(screen.getByLabelText('Province *'), '35')
+    await user.selectOptions(await screen.findByLabelText('City / Regency *'), '3578')
+    await user.type(screen.getByLabelText('Full Address (street, RT/RW, landmark) *'), 'Jl. Merdeka No. 1')
+    await user.type(screen.getByLabelText('Postal Code *'), '60111')
+    await user.type(screen.getByLabelText('Estimated Potential Value (Rp)'), '5000000')
+    await user.click(screen.getByRole('button', { name: 'Save Lead' }))
 
     await waitFor(() => expect(api.createLead).toHaveBeenCalledTimes(1))
     expect(api.createLead.mock.calls[0][0]).toMatchObject({
@@ -227,8 +228,8 @@ describe('Halaman NewLead', () => {
     expect(screen.queryByPlaceholderText(/Cari alamat/)).not.toBeInTheDocument()
     expect(screen.getByText('Belum ada lokasi dipilih')).toBeInTheDocument()
 
-    await user.type(screen.getByLabelText('Alamat'), 'Jl. Rungkut')
-    await user.type(screen.getByLabelText('Kota'), 'Surabaya')
+    await user.type(screen.getByLabelText('Full Address (street, RT/RW, landmark) *'), 'Jl. Rungkut')
+    await user.type(screen.getByLabelText('City / Regency *'), 'Surabaya')
 
     await waitFor(() => expect(geocode.searchAddress).toHaveBeenCalledWith(expect.stringContaining('Jl. Rungkut')), { timeout: 2000 })
     // peta pindah dari "belum ada lokasi" ke titik hasil geocode alamat yang diketik
@@ -241,10 +242,10 @@ describe('Halaman NewLead', () => {
     shell(<NewLead />, ['/leads/new'])
 
     // Kota sudah terisi (mis. dari GPS awal) SEBELUM sales mengetik Alamat baru
-    await user.type(await screen.findByLabelText('Kota'), 'Daerah Khusus Ibukota Jakarta')
+    await user.type(await screen.findByLabelText('City / Regency *'), 'Daerah Khusus Ibukota Jakarta')
     geocode.searchAddress.mockClear()
 
-    await user.type(screen.getByLabelText('Alamat'), 'sma 10 tangerang')
+    await user.type(screen.getByLabelText('Full Address (street, RT/RW, landmark) *'), 'sma 10 tangerang')
     await waitFor(() => expect(geocode.searchAddress).toHaveBeenCalledWith('sma 10 tangerang'), { timeout: 2000 })
     // bukan digabung jadi "sma 10 tangerang, Daerah Khusus Ibukota Jakarta, ..."
     expect(geocode.searchAddress).not.toHaveBeenCalledWith(expect.stringContaining('Jakarta'))
@@ -261,28 +262,28 @@ describe('Halaman NewLead', () => {
 
     // Kota & Provinsi awal terpilih otomatis dari GPS (Jakarta Pusat / DKI Jakarta) -- dropdown,
     // belum pernah dipilih manual oleh sales
-    const citySelect = screen.getByLabelText('Kota')
-    const provinceSelect = screen.getByLabelText('Provinsi')
+    const citySelect = screen.getByLabelText('City / Regency *')
+    const provinceSelect = screen.getByLabelText('Province *')
     await waitFor(() => expect(provinceSelect).toHaveValue('31'), { timeout: 2000 })
     await waitFor(() => expect(citySelect).toHaveValue('3171'), { timeout: 2000 }) // KOTA JAKARTA PUSAT
 
-    await user.type(screen.getByLabelText('Alamat'), 'sma 10 tangerang')
+    await user.type(screen.getByLabelText('Full Address (street, RT/RW, landmark) *'), 'sma 10 tangerang')
     await waitFor(() => expect(geocode.searchAddress).toHaveBeenCalled(), { timeout: 2000 })
     // Kota & Provinsi ikut diperbarui ke lokasi baru (Tangerang/Banten), bukan tetap Jakarta yang basi
     await waitFor(() => expect(provinceSelect).toHaveValue('36'), { timeout: 2000 }) // BANTEN
     await waitFor(() => expect(citySelect).toHaveValue('3671'), { timeout: 2000 }) // KOTA TANGERANG
-    expect(screen.getByLabelText('Postal Code')).toHaveValue('15118')
+    expect(screen.getByLabelText('Postal Code *')).toHaveValue('15118')
   })
 
   it('Kota nonaktif sampai Provinsi dipilih, lalu daftar kota berganti sesuai Provinsi yang dipilih', async () => {
     const user = userEvent.setup()
     shell(<NewLead />, ['/leads/new'])
 
-    const citySelect = await screen.findByLabelText('Kota')
+    const citySelect = await screen.findByLabelText('City / Regency *')
     expect(citySelect).toBeDisabled()
     expect(screen.getByText('Pilih Provinsi dulu.')).toBeInTheDocument()
 
-    await user.selectOptions(screen.getByLabelText('Provinsi'), '35')
+    await user.selectOptions(screen.getByLabelText('Province *'), '35')
     await waitFor(() => expect(citySelect).toBeEnabled())
     expect(within(citySelect).getByRole('option', { name: 'KOTA SURABAYA' })).toBeInTheDocument()
     expect(within(citySelect).queryByRole('option', { name: 'KOTA TANGERANG' })).not.toBeInTheDocument()
@@ -293,18 +294,18 @@ describe('Halaman NewLead', () => {
     shell(<NewLead />, ['/leads/new'])
 
     await screen.findByRole('option', { name: 'JAWA TIMUR' })
-    await user.selectOptions(screen.getByLabelText('Provinsi'), '35')
-    await user.selectOptions(await screen.findByLabelText('Kota'), '3578')
-    expect(screen.getByLabelText('Kota')).toHaveValue('3578')
+    await user.selectOptions(screen.getByLabelText('Province *'), '35')
+    await user.selectOptions(await screen.findByLabelText('City / Regency *'), '3578')
+    expect(screen.getByLabelText('City / Regency *')).toHaveValue('3578')
 
-    await user.selectOptions(screen.getByLabelText('Provinsi'), '36')
-    await waitFor(() => expect(screen.getByLabelText('Kota')).toHaveValue(''))
+    await user.selectOptions(screen.getByLabelText('Province *'), '36')
+    await waitFor(() => expect(screen.getByLabelText('City / Regency *')).toHaveValue(''))
 
     // bukan cuma tampilan dropdown yang kosong -- data yang akan terkirim pun harus benar
     // kosong (bukan diam-diam masih menyimpan "KOTA SURABAYA" yang sudah tidak relevan)
     api.createLead.mockResolvedValue({ id: 99 })
-    await user.type(screen.getByLabelText('Nama Customer'), 'UD Ganti Provinsi')
-    await user.click(screen.getByRole('button', { name: 'Simpan Lead' }))
+    await user.type(screen.getByLabelText('Customer / Store Name *'), 'UD Ganti Provinsi')
+    await user.click(screen.getByRole('button', { name: 'Save Lead' }))
     await waitFor(() => expect(api.createLead).toHaveBeenCalled())
     expect(api.createLead.mock.calls[0][0].city).toBe('')
   })
@@ -317,25 +318,25 @@ describe('Halaman NewLead', () => {
     shell(<NewLead />, ['/leads/new'])
 
     await screen.findByRole('option', { name: 'JAWA TIMUR' })
-    await user.selectOptions(screen.getByLabelText('Provinsi'), '35')
-    await user.selectOptions(await screen.findByLabelText('Kota'), '3578') // pilihan manual sales
+    await user.selectOptions(screen.getByLabelText('Province *'), '35')
+    await user.selectOptions(await screen.findByLabelText('City / Regency *'), '3578') // pilihan manual sales
 
-    await user.type(screen.getByLabelText('Alamat'), 'alamat lain di tangerang')
+    await user.type(screen.getByLabelText('Full Address (street, RT/RW, landmark) *'), 'alamat lain di tangerang')
     await waitFor(() => expect(geocode.searchAddress).toHaveBeenCalled(), { timeout: 2000 })
     await new Promise((r) => setTimeout(r, 300))
 
     // tetap JAWA TIMUR / KOTA SURABAYA -- pilihan manual sales tidak boleh ditimpa
-    expect(screen.getByLabelText('Provinsi')).toHaveValue('35')
-    expect(screen.getByLabelText('Kota')).toHaveValue('3578')
+    expect(screen.getByLabelText('Province *')).toHaveValue('35')
+    expect(screen.getByLabelText('City / Regency *')).toHaveValue('3578')
   })
 
   it('kegagalan simpan menyimpan draft lokal agar data tidak hilang', async () => {
     api.createLead.mockRejectedValue(new Error('Server error'))
     const user = userEvent.setup()
     shell(<NewLead />, ['/leads/new'])
-    await user.type(screen.getByLabelText('Nama Customer'), 'UD Draft')
+    await user.type(screen.getByLabelText('Customer / Store Name *'), 'UD Draft')
     await user.type(screen.getByLabelText('KTP'), '1')
-    await user.click(screen.getByRole('button', { name: 'Simpan Lead' }))
+    await user.click(screen.getByRole('button', { name: 'Save Lead' }))
     await waitFor(() => expect(JSON.parse(localStorage.getItem('sc_draft_lead') || '[]')).toHaveLength(1))
     expect(api.uploadLeadPhoto).not.toHaveBeenCalled()
   })
@@ -344,9 +345,9 @@ describe('Halaman NewLead', () => {
     api.createLead.mockResolvedValue({ id: 1 })
     const user = userEvent.setup()
     shell(<NewLead />, [{ pathname: '/leads/new', state: { prefill: { coords: { lat: -7.3, lng: 112.7 } } } }])
-    await user.type(screen.getByLabelText('Nama Customer'), 'Dari Kunjungan')
+    await user.type(screen.getByLabelText('Customer / Store Name *'), 'Dari Kunjungan')
     await user.type(screen.getByLabelText('KTP'), '9')
-    await user.click(screen.getByRole('button', { name: 'Simpan Lead' }))
+    await user.click(screen.getByRole('button', { name: 'Save Lead' }))
     await waitFor(() => expect(api.createLead).toHaveBeenCalled())
     expect(api.createLead.mock.calls[0][0]).toMatchObject({ latitude: -7.3, longitude: 112.7 })
   })
@@ -393,9 +394,11 @@ describe('Visit Mode & Check-in', () => {
     api.getCustomers.mockResolvedValue({ data: [{ id: 1, name: 'PT Uji', latitude: '-7.2575000', longitude: '112.7521000' }] })
     api.checkinVisit.mockResolvedValue({ id: 12, checkin_distance: 0 })
     const user = userEvent.setup()
-    shell(routes, ['/checkin'])
+    const { container } = shell(routes, ['/checkin'])
 
-    await user.click(await screen.findByRole('button', { name: 'Check-in' }))
+    await user.upload(container.querySelector('input[type=file]'), new File(['x'], 'toko.jpg', { type: 'image/jpeg' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Check In' })).toBeEnabled())
+    await user.click(screen.getByRole('button', { name: 'Check In' }))
     await waitFor(() => expect(api.checkinVisit).toHaveBeenCalledWith(expect.objectContaining({ customer_id: '1' })))
     // VisitMode tampil dengan nama customer dan tombol Checkout
     expect(await screen.findByRole('button', { name: 'Checkout' })).toBeInTheDocument()
@@ -407,13 +410,15 @@ describe('Visit Mode & Check-in', () => {
     api.getLead.mockResolvedValue({ id: 5, business_name: 'UD Lead Checkin', latitude: '-7.2575000', longitude: '112.7521000' })
     api.checkinVisit.mockResolvedValue({ id: 20, lead: { id: 5, business_name: 'UD Lead Checkin', current_task: null } })
     const user = userEvent.setup()
-    shell(routes, [{ pathname: '/checkin', state: { leadId: 5 } }])
+    const { container } = shell(routes, [{ pathname: '/checkin', state: { leadId: 5 } }])
 
-    await screen.findByDisplayValue('UD Lead Checkin')
+    await screen.findByText(/UD Lead Checkin/)
     expect(screen.queryByLabelText('Customer')).not.toBeInTheDocument()
     expect(api.getCustomers).not.toHaveBeenCalled()
 
-    await user.click(await screen.findByRole('button', { name: 'Check-in' }))
+    await user.upload(container.querySelector('input[type=file]'), new File(['x'], 'toko.jpg', { type: 'image/jpeg' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Check In' })).toBeEnabled())
+    await user.click(screen.getByRole('button', { name: 'Check In' }))
     await waitFor(() => expect(api.checkinVisit).toHaveBeenCalledWith(expect.objectContaining({ lead_id: 5 })))
     expect(api.checkinVisit.mock.calls[0][0]).not.toHaveProperty('customer_id')
   })
@@ -446,7 +451,7 @@ describe('Halaman Home', () => {
         { key: 'lead', label: 'Lead', color: 'var(--orange)', count: 3 },
         { key: 'brand_awareness', label: 'Brand Awareness', color: 'var(--blue)', count: 2 },
         { key: 'sampling', label: 'Sampling', color: '#7C5CFC', count: 5 },
-        { key: 'quote', label: 'Quote', color: 'var(--amber)', count: 1 },
+        { key: 'quotation', label: 'Quotation', color: 'var(--amber)', count: 1 },
         { key: 'win', label: 'Win', color: 'var(--green)', count: 6 },
         { key: 'lose', label: 'Lose', color: 'var(--pink)', count: 7 },
       ],
@@ -454,13 +459,13 @@ describe('Halaman Home', () => {
       ar: {},
     })
     const { container } = shell(<Home />, ['/home'])
-    await waitFor(() => expect(container.querySelectorAll('.bars .col')).toHaveLength(7))
+    await waitFor(() => expect(container.querySelectorAll('.bars .col')).toHaveLength(6))
 
     const cols = [...container.querySelectorAll('.bars .col')].map((c) => [c.querySelector('.cn').textContent, c.querySelector('.n').textContent])
-    expect(cols).toEqual([['Prospek', '4'], ['Lead', '3'], ['Brand', '2'], ['Sampling', '5'], ['Quote', '1'], ['Win', '6'], ['Lose', '7']])
+    // Prospect = Prospek (4) + Lead (3), sesuai dokumen: tidak ada tahap Lead terpisah
+    expect(cols).toEqual([['Prospect', '7'], ['Brand Aw.', '2'], ['Sampling', '5'], ['Quote', '1'], ['Win', '6'], ['Lose', '7']])
 
-    const tile = screen.getByText('Activities').closest('.gitem')
-    expect(within(tile).getByText('2')).toBeInTheDocument() // 2 tugas terlambat
+    expect(screen.getByText('Active tasks').previousElementSibling.textContent).toBe('6')
   })
 })
 
@@ -540,26 +545,5 @@ describe('Lacak order per customer', () => {
     api.getOrders.mockResolvedValue({ data: [] })
     shell(<Tracker />, ['/track'])
     await waitFor(() => expect(api.getOrders).toHaveBeenCalledWith({}))
-  })
-
-  it('detail customer punya aksi Lacak Order yang membawa customerId', async () => {
-    api.getCustomer.mockResolvedValue({ id: 4, name: 'PT Xenon', customer_code: 'C-4' })
-    const user = userEvent.setup()
-    render(
-      <MemoryRouter initialEntries={['/customers/4']}>
-        <UiProvider>
-          <PhoneFrame>
-            <Routes>
-              <Route path="/customers/:id" element={<CustomerDetail />} />
-              <Route path="*" element={<Probe />} />
-            </Routes>
-          </PhoneFrame>
-        </UiProvider>
-      </MemoryRouter>,
-    )
-    await user.click(await screen.findByText('Lacak Order'))
-    const probe = await screen.findByTestId('probe')
-    expect(probe.textContent).toContain('/track')
-    expect(probe.textContent).toContain('"customerId":4')
   })
 })

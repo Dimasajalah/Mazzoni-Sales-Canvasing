@@ -1,10 +1,11 @@
+//frontend/src/components/GlobalSearch.jsx
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { globalSearch } from '../api'
 import { useDebounce } from '../hooks/useDebounce'
 import { listOf } from '../lib/format'
 
-export function GlobalSearch({ placeholder = 'Cari customer, part, invoice...' }) {
+export function GlobalSearch({ placeholder = 'Search customer, part, order...' }) {
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
   const [results, setResults] = useState([])
@@ -56,7 +57,7 @@ export function GlobalSearch({ placeholder = 'Cari customer, part, invoice...' }
           height="17"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#0A1C40"
+          stroke="#9C9487"
           strokeWidth="1.9"
           strokeLinecap="round"
         >

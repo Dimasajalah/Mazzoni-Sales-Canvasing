@@ -89,7 +89,7 @@ describe('LeadTaskPanel: field tugas seragam di semua layar', () => {
     expect(screen.getByLabelText('Stage')).toHaveValue('Opportunity')
     expect(screen.getByLabelText('Task')).toHaveValue('Sample')
     expect(screen.getByLabelText('Assigned to')).toHaveValue('Budi Santoso')
-    expect(screen.getByLabelText('Task Status')).toHaveValue('Berjalan')
+    expect(screen.getByLabelText('Status *')).toHaveValue('Process')
     expect(screen.getByLabelText('Comment')).toHaveValue('')
     // field baca-saja tidak bisa diubah
     expect(screen.getByLabelText('Stage')).toHaveAttribute('readonly')
@@ -104,12 +104,12 @@ describe('LeadTaskPanel: field tugas seragam di semua layar', () => {
     expect(field).toHaveValue('lama')
     await user.clear(field)
     await user.type(field, 'baru')
-    await waitFor(() => expect(screen.getByLabelText('Tugas berikutnya')).toHaveValue('6'))
+    await waitFor(() => expect(screen.getByLabelText('Next Task')).toHaveValue('6'))
 
-    await user.click(screen.getByRole('button', { name: 'Simpan' }))
-    await waitFor(() => expect(api.concludeLeadTask).toHaveBeenCalledWith(99, {
-      conclusion: 'NEXT', reason_code: 'Tertarik', next_template_id: 6, due_date: null, remark: 'baru',
-    }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(api.concludeLeadTask).toHaveBeenCalledWith(99, expect.objectContaining({
+      conclusion: 'NEXT', reason_code: 'TRTK', task_status: 'Process', next_template_id: 6, due_date: null, remark: 'baru',
+    })))
   })
 
   it('Selesaikan Tugas: grid field tugas; comment lama berlabel "Comment sebelumnya" dan baca-saja', async () => {
@@ -129,10 +129,10 @@ describe('LeadTaskPanel: field tugas seragam di semua layar', () => {
   it('Tahap berikutnya berupa field baca-saja yang mengikuti Tugas berikutnya', async () => {
     const user = setup()
     await user.click(screen.getByRole('button', { name: /Form Brand/ }))
-    await waitFor(() => expect(screen.getByLabelText('Tugas berikutnya')).toHaveValue('6'))
-    const stage = screen.getByLabelText('Tahap berikutnya')
+    await waitFor(() => expect(screen.getByLabelText('Next Task')).toHaveValue('6'))
+    const stage = screen.getByLabelText('Next Stage')
     expect(stage).toHaveAttribute('readonly')
-    expect(stage).toHaveValue('Quote')
+    expect(stage).toHaveValue('QUOTE')
   })
 
   it('Comment di kartu tugas aktif disimpan lewat updateLeadTask', async () => {

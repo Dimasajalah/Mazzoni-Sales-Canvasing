@@ -1,0 +1,25 @@
+/* ===== 06 Delegate PIC (dokumen hal. 20): lembar bawah untuk serah-terima PIC customer ===== */
+.dp-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.dp-title{ font-size:18px; font-weight:800; color:var(--text); }
+.dp-x{ border:none; background:none; padding:0 2px; font-size:24px; line-height:1; color:var(--faint); cursor:pointer; }
+.dp-sub{ margin:4px 0 14px; font-size:12.5px; line-height:1.45; color:var(--mut); }
+.dp-sub b{ color:var(--text); }
+.dp-search{ width:100%; padding:12px 14px; border:1px solid var(--stroke); border-radius:12px; background:#FFFFFF;
+  font-size:13.5px; font-family:inherit; color:var(--text); }
+.dp-search:focus{ outline:none; border-color:var(--primary); }
+.dp-list{ max-height:300px; overflow-y:auto; margin:12px 0; display:flex; flex-direction:column; gap:8px; }
+.dp-row{ display:flex; align-items:center; gap:12px; width:100%; padding:12px 14px; border:1px solid var(--stroke);
+  border-radius:14px; background:#FFFFFF; text-align:left; cursor:pointer; font-family:inherit; }
+.dp-row.on{ border-color:var(--primary); background:var(--primary-soft); }
+.dp-av{ flex:none; width:40px; height:40px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:800; }
+.dp-av.blue{ background:var(--blue-soft); color:var(--blue-ink); }
+.dp-av.green{ background:var(--green-soft); color:var(--green-ink); }
+.dp-av.gold{ background:var(--amber-soft); color:var(--amber-ink); }
+.dp-row.on .dp-av{ background:var(--primary); color:#FFFFFF; }
+.dp-n{ font-size:14px; font-weight:800; color:var(--text); }
+.dp-c{ margin-top:1px; font-size:11.5px; color:var(--faint); }
+.dp-tick{ margin-left:auto; font-size:18px; font-weight:800; color:var(--primary); }
+.dp-empty{ padding:14px 4px; font-size:12.5px; color:var(--faint); text-align:center; }
+.dp-foot{ display:grid; grid-template-columns:1fr 1.4fr; gap:10px; }
+.dp-cancel{ padding:13px; border-radius:12px; border:1px solid var(--stroke); background:#FFFFFF; color:var(--text);
+  font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; }

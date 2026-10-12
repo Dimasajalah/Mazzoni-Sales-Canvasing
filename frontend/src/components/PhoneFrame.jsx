@@ -1,18 +1,10 @@
 //frontend/src/components/PhoneFrame.jsx
-import { useEffect, useState } from 'react'
 import { useOnline } from '../hooks/useOnline'
 import { useUi } from '../context/UiContext'
-import { hhmm } from '../lib/format'
 
-export function PhoneFrame({ children, showChrome = true }) {
-  const [clock, setClock] = useState(hhmm())
+export function PhoneFrame({ children }) {
   const online = useOnline()
   const { toast, sheet, closeSheet } = useUi()
-
-  useEffect(() => {
-    const t = setInterval(() => setClock(hhmm()), 30000)
-    return () => clearInterval(t)
-  }, [])
 
   return (
     <div className="stage">
@@ -24,18 +16,6 @@ export function PhoneFrame({ children, showChrome = true }) {
       </div>
       <div className="phone">
         <div className="screen-wrap">
-          {showChrome && (
-            <>
-              <div className="notch" />
-              <div className="statusbar">
-                <span>{clock}</span>
-                <span className="r">
-                  <span className="bar" />
-                  <span className="bat" />
-                </span>
-              </div>
-            </>
-          )}
           {!online && (
             <div className="offline-banner">● Offline — draft lokal aktif, sync saat online</div>
           )}

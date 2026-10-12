@@ -1,3 +1,4 @@
+//frontend/src/pages/ArReport.jsx
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAging } from '../api'
@@ -43,7 +44,7 @@ export default function ArReport() {
 
   return (
     <Screen>
-      <TopBar title="Laporan Aging AR" backTo="/home" />
+      <TopBar title="Outstanding Report" backTo="/home" />
       <div className="card" style={{ marginBottom: 12 }}>
         <div className="muted" style={{ fontSize: 11 }}>Total outstanding</div>
         <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--pink)' }}>

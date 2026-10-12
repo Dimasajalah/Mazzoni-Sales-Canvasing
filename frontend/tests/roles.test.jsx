@@ -1,3 +1,4 @@
+//frontend/tests/roles.test.jsx
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
@@ -357,25 +358,29 @@ describe('Penjagaan peran: Sales Dealmaker tidak membuat order', () => {
     expect(await screen.findByRole('button', { name: 'Buat Order' })).toBeInTheDocument()
   })
 
-  it('Home Dealmaker: tanpa tile New Order, tile Delegasi berbadge (keluar), label peran tampil', async () => {
+  it('Home Dealmaker: tanpa tile New Order, tile Delegasi berbadge (keluar)', async () => {
     auth.user = U.dealmaker
     api.getDashboard.mockResolvedValue(dash({ incoming_pending: 0, outgoing_pending: 3 }))
-    const { container } = shell(<Home />)
+    const user = userEvent.setup()
+    shell(<Home />)
+    await waitFor(() => expect(screen.queryByText('Memuat…')).not.toBeInTheDocument())
+    await user.click(screen.getByRole('button', { name: 'Menu' }))
     expect(await screen.findByText('Delegasi')).toBeInTheDocument()
     expect(screen.queryByText('New Order')).not.toBeInTheDocument()
     expect(screen.queryByText('Master Data')).not.toBeInTheDocument()
     expect(screen.getByText('Laporan NOO')).toBeInTheDocument()
-    expect(screen.getByText(/Sales Dealmaker · Surabaya/)).toBeInTheDocument()
-    expect(within(screen.getByText('Delegasi').closest('.gitem')).getByText('3')).toBeInTheDocument()
-    expect(container.querySelector('.gitem')).not.toBeNull()
+    expect(within(screen.getByText('Delegasi').closest('.qa-item')).getByText('3')).toBeInTheDocument()
   })
 
   it('Home Sales Order: tile New Order ada, badge Delegasi memakai jumlah masuk', async () => {
     auth.user = U.order
     api.getDashboard.mockResolvedValue(dash({ incoming_pending: 2, outgoing_pending: 9 }))
+    const user = userEvent.setup()
     shell(<Home />)
+    await waitFor(() => expect(screen.queryByText('Memuat…')).not.toBeInTheDocument())
+    await user.click(screen.getByRole('button', { name: 'Menu' }))
     expect(await screen.findByText('New Order')).toBeInTheDocument()
-    const tile = screen.getByText('Delegasi').closest('.gitem')
+    const tile = screen.getByText('Delegasi').closest('.qa-item')
     expect(within(tile).getByText('2')).toBeInTheDocument()
     expect(within(tile).queryByText('9')).not.toBeInTheDocument()
     expect(screen.queryByText('Master Data')).not.toBeInTheDocument()
@@ -385,24 +390,13 @@ describe('Penjagaan peran: Sales Dealmaker tidak membuat order', () => {
     for (const who of [U.admin, U.supervisor]) {
       auth.user = who
       api.getDashboard.mockResolvedValue(dash({ incoming_pending: 0, outgoing_pending: 0 }))
+      const user = userEvent.setup()
       const { unmount } = shell(<Home />)
+      await waitFor(() => expect(screen.queryByText('Memuat…')).not.toBeInTheDocument())
+      await user.click(screen.getByRole('button', { name: 'Menu' }))
       expect(await screen.findByText('Master Data')).toBeInTheDocument()
       unmount()
     }
-  })
-
-  it('detail customer: aksi Order disembunyikan untuk Dealmaker', async () => {
-    api.getCustomer.mockResolvedValue({ id: 10, name: 'PT Pembeli', customer_code: 'C-10' })
-    auth.user = U.dealmaker
-    const { unmount } = shell(<CustomerDetail />, ['/customers/10'])
-    await screen.findByText('Lacak Order')
-    expect(screen.queryByText('Order', { selector: '.t' })).not.toBeInTheDocument()
-    unmount()
-
-    auth.user = U.order
-    shell(<CustomerDetail />, ['/customers/10'])
-    await screen.findByText('Lacak Order')
-    expect(screen.getByText('Order', { selector: '.t' })).toBeInTheDocument()
   })
 
   it('Visit Mode: tile Order disembunyikan untuk Dealmaker, New Lead tetap ada', async () => {

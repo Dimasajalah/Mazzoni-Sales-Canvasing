@@ -55,20 +55,20 @@ export function bucketOf(days) {
 
 export const STAGE_LABEL = { LEAD: 'Lead', OPPORTUNITY: 'Opportunity', QUOTE: 'Quote' }
 
-// Warna mengikuti prototype tim functional: Lead oranye, Opportunity biru, Quote kuning
+// Warna berupa hex (bukan var()) supaya bisa disambung akhiran transparansi, mis. `${warna}22`.
 export function stageColor(stage) {
   const s = String(stage || '').toUpperCase()
-  if (s === 'LEAD') return 'var(--orange)'
-  if (s === 'OPPORTUNITY') return 'var(--blue)'
-  if (s === 'QUOTE') return 'var(--amber)'
-  return 'var(--mut)'
+  if (s === 'LEAD') return '#4C566A'
+  if (s === 'OPPORTUNITY') return '#1F4FBF'
+  if (s === 'QUOTE') return '#8A5A00'
+  return '#4C566A'
 }
 
 export function winLossMeta(winLoss) {
   const s = String(winLoss || 'OPEN').toUpperCase()
-  if (s === 'WIN') return { label: 'Win', color: 'var(--green)' }
-  if (s === 'LOSE') return { label: 'Lose', color: 'var(--pink)' }
-  return { label: 'Open', color: 'var(--mut)' }
+  if (s === 'WIN') return { label: 'Win', color: '#146338' }
+  if (s === 'LOSE') return { label: 'Lose', color: '#A81B30' }
+  return { label: 'Open', color: '#556070' }
 }
 
 /**
@@ -77,14 +77,14 @@ export function winLossMeta(winLoss) {
  * di backend, supaya badge di sini dan bar dashboard konsisten.
  */
 export const STATUS_CUSTOMER_STEPS = [
-  ['LEAD', 'Lead', 'var(--mut)'],
-  ['PROSPEK', 'Prospek', 'var(--orange2)'],
-  ['BRAND_AWARENESS', 'Brand Awareness', 'var(--blue)'],
-  ['SAMPLING', 'Sampling', '#7C5CFC'],
-  ['QUOTATION', 'Quotation', 'var(--amber)'],
-  ['WIN', 'Win', 'var(--green)'],
-  ['LOSE', 'Lose', 'var(--pink)'],
-  ['DISTRIBUTION', 'Distribution', '#0B7A46'],
+  ['LEAD', 'Lead', '#8A95A8', '#4C566A'],
+  ['PROSPEK', 'Prospek', '#8A95A8', '#4C566A'],
+  ['BRAND_AWARENESS', 'Brand Awareness', '#2F6FED', '#1F4FBF'],
+  ['SAMPLING', 'Sampling', '#E3A008', '#8A5A00'],
+  ['QUOTATION', 'Quotation', '#7B5BD6', '#5B3FB0'],
+  ['WIN', 'Win', '#1B7F46', '#146338'],
+  ['LOSE', 'Lose', '#D64550', '#A81B30'],
+  ['DISTRIBUTION', 'Distribution', '#17202B', '#17202B'],
 ]
 
 export const STATUS_CUSTOMER_LABEL = Object.fromEntries(STATUS_CUSTOMER_STEPS.map(([k, label]) => [k, label]))
@@ -92,7 +92,11 @@ export const STATUS_CUSTOMER_LABEL = Object.fromEntries(STATUS_CUSTOMER_STEPS.ma
 export function statusCustomerMeta(status) {
   const s = String(status || 'PROSPEK').toUpperCase()
   const found = STATUS_CUSTOMER_STEPS.find(([k]) => k === s)
-  return { label: found ? found[1] : s, color: found ? found[2] : 'var(--mut)' }
+  return {
+    label: found ? found[1] : s,
+    color: found ? found[2] : '#8A95A8',
+    ink: found ? found[3] : '#4C566A',
+  }
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
@@ -115,12 +119,12 @@ export function daysFromToday(iso) {
 
 /** Label jadwal tugas: Belum dijadwalkan / Jadwal: dd Mmm / Terlambat n hari */
 export function dueMeta(iso) {
-  if (!iso) return { label: 'Belum dijadwalkan', color: 'var(--mut)' }
+  if (!iso) return { label: 'Belum dijadwalkan', color: '#556070' }
   const d = daysFromToday(iso)
-  if (d < 0) return { label: `Terlambat ${-d} hari`, color: 'var(--pink)' }
-  if (d === 0) return { label: 'Jadwal hari ini', color: 'var(--amber)' }
-  if (d === 1) return { label: 'Jadwal besok', color: 'var(--green)' }
-  return { label: `Jadwal: ${fmtDate(iso)}`, color: 'var(--green)' }
+  if (d < 0) return { label: `Terlambat ${-d} hari`, color: '#A81B30' }
+  if (d === 0) return { label: 'Jadwal hari ini', color: '#8A5A00' }
+  if (d === 1) return { label: 'Jadwal besok', color: '#146338' }
+  return { label: `Jadwal: ${fmtDate(iso)}`, color: '#146338' }
 }
 
 export function listOf(data) {

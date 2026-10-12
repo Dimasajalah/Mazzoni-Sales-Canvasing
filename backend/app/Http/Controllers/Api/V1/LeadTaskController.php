@@ -27,7 +27,7 @@ class LeadTaskController extends Controller
         $status = strtoupper((string) $request->get('status', 'OPEN'));
 
         $query = $this->service->visibleTasks($user)
-            ->with('lead:id,business_name,owner_name,stage,win_loss,phone,task_set_id,salesperson_id')
+        ->with('lead:id,business_name,owner_name,stage,win_loss,status_customer,phone,task_set_id,salesperson_id')
             ->when($request->filled('lead_id'), fn ($q) => $q->where('lead_id', $request->get('lead_id')))
             ->when($status !== 'ALL', fn ($q) => $q->where('status', $status))
             // yang sudah terjadwal lebih dulu (paling dekat), yang belum dijadwalkan di bawah
@@ -93,6 +93,7 @@ class LeadTaskController extends Controller
             'conclusion' => ['required', Rule::in(['NEXT', 'WIN', 'LOSE'])],
             'next_template_id' => ['nullable', 'integer', 'exists:task_templates,id'],
             'reason_code' => ['nullable', 'string', 'max:100'],
+            'task_status' => ['nullable', Rule::in(['Process', 'WaitCust', 'Hold', 'In Progress'])],
             'remark' => ['nullable', 'string', 'max:500'],
             'due_date' => ['nullable', 'date'],
         ]);

@@ -5,6 +5,8 @@ namespace App\Services;
 
 use App\Models\Competitor;
 use App\Models\Lead;
+use App\Models\LeadTask;
+use App\Models\ProductSample;
 use App\Models\Product;
 use App\Models\ProductPackaging;
 use App\Models\Quote;
@@ -24,7 +26,7 @@ use Illuminate\Validation\ValidationException;
 class QuoteService
 {
     /** Poin 14: pilihan termin pembayaran yang valid. */
-    public const PAYMENT_TERMS = ['15D', '30D', '45D'];
+    public const PAYMENT_TERMS = ['15D', '30D', '45D', 'COD'];
 
     private const HEADER_FIELDS = [
         'lead_id',
@@ -45,6 +47,7 @@ class QuoteService
     private const WITH = [
         'lead:id,business_name,stage,win_loss,task_set_id',
         'customer:id,name,customer_code',
+        'salesperson:id,name',
         'sample:id,flavor_variant,version,qty,product_group',
         'lines.product:id,part_num,description,epicor_part_num,product_group,revision',
         'lines.packaging',
@@ -74,7 +77,15 @@ class QuoteService
 
     public function find(int $id): ?Quote
     {
-        return Quote::with(self::WITH)->find($id)?->append('sample_product_group');
+        $quote = Quote::with(self::WITH)->find($id);
+        if (! $quote) {
+            return null;
+        }
+
+        $quote->append(['sample_product_group', 'source_followup']);
+        $this->attachLineSources($quote);
+
+        return $quote;
     }
 
     public function create(array $data, array $lines, User $user): Quote
@@ -124,7 +135,16 @@ class QuoteService
             $total = 0.0;
 
             foreach (array_values($lines) as $i => $line) {
-                $product = Product::findOrFail($line['product_id']);
+                if (! empty($line['product_id'])) {
+                    $product = Product::findOrFail($line['product_id']);
+                } else {
+                    // Add Line (dokumen hal. 35): Line baru dari sample yang disetujui; sample harus milik prospek ini.
+                    $sample = ProductSample::where('id', $line['sample_id'] ?? 0)->where('lead_id', $quote->lead_id)->first();
+                    if (! $sample) {
+                        throw ValidationException::withMessages(["lines.{$i}.sample_id" => ['Sample tidak ditemukan untuk prospek ini.']]);
+                    }
+                    $product = $this->placeholderProductFor($sample);
+                }
                 $packaging = null;
 
                 if (! empty($line['packaging_id'])) {
@@ -155,6 +175,11 @@ class QuoteService
                 }
 
                 $pcs = $this->packaging->kgToPcs($kg, $gramasi);
+                // Dokumen hal. 34: Qty Converted (PCS) otomatis dari Qty Order ÷ Packaging, tetapi boleh ditimpa
+                // bila jumlah kemasan sebenarnya berbeda.
+                if (isset($line['qty_pcs']) && (float) $line['qty_pcs'] > 0) {
+                    $pcs = $line['qty_pcs'];
+                }
                 $price = isset($line['unit_price']) ? (float) $line['unit_price'] : (float) $product->price;
                 $strata = $this->packaging->strataPercent($product->id, $kg);
                 // Poin 15: diskon bertingkat — strata dulu, lalu Disc 1-4, tiap kolom memotong sisa harga.
@@ -167,7 +192,7 @@ class QuoteService
                 $gross = $pcs * $price;
                 $lineTotal = round($gross * (1 - $effective / 100), 2);
 
-                QuoteLine::create([
+                $created = QuoteLine::create([
                     'quote_id' => $quote->id,
                     'product_id' => $product->id,
                     'description' => $product->description,
@@ -183,7 +208,11 @@ class QuoteService
                     'disc3_percent' => $disc3,
                     'disc4_percent' => $disc4,
                     'line_total' => $lineTotal,
-                ]);
+                    ]);
+    
+                    if (! empty($line['sample_id'])) {
+                        QuoteLine::whereKey($created->id)->update(['product_sample_id' => $line['sample_id']]);
+                    }
 
                 $subtotal += $gross;
                 $total += $lineTotal;
@@ -207,7 +236,7 @@ class QuoteService
             throw ValidationException::withMessages(['quote' => ['Tambahkan minimal 1 baris sebelum menandai Quoted.']]);
         }
 
-        $quote->update(['quoted' => true, 'quoted_at' => now(), 'status' => Quote::QUOTED]);
+        $quote->update([...$this->quotedStamp($quote), 'status' => Quote::QUOTED]);
         $this->auditLogService->log($user->id, 'quote.quoted', Quote::class, $quote->id, null, $quote->toArray());
 
         return $quote->load(self::WITH);
@@ -248,9 +277,16 @@ class QuoteService
     /** Prospek ditutup: penawaran yang masih berjalan ikut menjadi WON / LOST. */
     public function syncFromLead(Lead $lead, string $result): void
     {
-        Quote::where('lead_id', $lead->id)
-            ->whereIn('status', [Quote::DRAFT, Quote::QUOTED])
-            ->update(['status' => $result === 'WIN' ? Quote::WON : Quote::LOST]);
+        $quotes = Quote::where('lead_id', $lead->id)->whereIn('status', [Quote::DRAFT, Quote::QUOTED])->get();
+
+        foreach ($quotes as $quote) {
+            if ($result === 'WIN') {
+                // Quoted otomatis saat konklusi menjadi Win (dokumen hal. 32); tanggal Quoted dan Expires terisi.
+                $quote->update(['status' => Quote::WON, ...$this->quotedStamp($quote)]);
+            } else {
+                $quote->update(['status' => Quote::LOST]);
+            }
+        }
     }
 
     /**
@@ -329,14 +365,196 @@ class QuoteService
             $quote->update([
                 'customer_id' => $customerId,
                 'status' => Quote::WON,
-                'quoted' => true,
-                'quoted_at' => $quote->quoted_at ?? now(),
+                ...$this->quotedStamp($quote),
             ]);
 
             $this->auditLogService->log($user->id, 'quote.convert', Quote::class, $quote->id, null, ['order_id' => $order->id]);
 
             return $order;
         });
+    }
+
+    /** Quoted otomatis (dokumen hal. 32): tanggal Quoted = hari ini dan Expires = +14 hari, bila belum terisi. */
+    private function quotedStamp(Quote $quote): array
+    {
+        return [
+            'quoted' => true,
+            'quoted_at' => $quote->quoted_at ?? now(),
+            'expires_at' => $quote->expires_at ?? now()->addDays(14)->toDateString(),
+        ];
+    }
+
+    /** Sample yang disetujui (Follow Up "Sample Cocok") untuk prospek Quotation ini, dengan penanda "Already on Line N". */
+    public function approvedSamples(Quote $quote): array
+    {
+        if (! $quote->lead_id) {
+            return [];
+        }
+
+        $tasks = LeadTask::where('lead_id', $quote->lead_id)
+            ->where('conclusion', 'NEXT')
+            ->where('reason_code', 'Sample Cocok')
+            ->orderBy('id')
+            ->get(['id', 'code'])
+            ->keyBy('id');
+        if ($tasks->isEmpty()) {
+            return [];
+        }
+
+        $positions = [];
+        foreach ($quote->lines()->orderBy('id')->pluck('product_sample_id')->values() as $i => $sampleId) {
+            if ($sampleId) {
+                $positions[$sampleId] = $i + 1;
+            }
+        }
+
+        return ProductSample::whereIn('lead_task_id', $tasks->keys())
+            ->orderBy('id')
+            ->get()
+            ->map(function (ProductSample $s) use ($tasks, $positions) {
+                preg_match('/^GIVESMPL(\d+)$/', (string) $tasks[$s->lead_task_id]->code, $m);
+                $registered = $this->registeredProductFor($s);
+
+                return [
+                    'id' => $s->id,
+                    'followup_number' => isset($m[1]) ? (int) $m[1] : null,
+                    'product_group' => $s->product_group,
+                    'part' => $s->part,
+                    'rev' => $s->rev,
+                    'description' => $s->description,
+                    'package_size_gr' => $s->qty,
+                    'qty_given' => $s->qty_given,
+                    'used_on_line' => $positions[$s->id] ?? null,
+                    'registered_product_id' => $registered?->id,
+                    'registered_price' => $registered?->price,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /** Pencarian produk manual untuk Add Blank Line (Product Group dan teks Part / Description). */
+    public function searchProducts(array $filters = []): array
+    {
+        $products = Product::query()
+            ->select(['id', 'part_num', 'description', 'epicor_part_num', 'product_group', 'revision', 'price'])
+            ->when(! empty($filters['id']), fn ($q) => $q->where('id', $filters['id']))
+            ->when(! empty($filters['registered']), fn ($q) => $q->whereNotNull('epicor_part_num'))
+            ->when(! empty($filters['product_group']), fn ($q) => $q->where('product_group', $filters['product_group']))
+            ->when(! empty($filters['q']), fn ($q) => $q->where(fn ($w) => $w
+                ->where('part_num', 'like', '%'.$filters['q'].'%')
+                ->orWhere('description', 'like', '%'.$filters['q'].'%')))
+            ->orderBy('product_group')
+            ->orderBy('part_num')
+            ->limit(30)
+            ->get();
+
+        return [
+            'groups' => Product::query()->whereNotNull('product_group')->distinct()->orderBy('product_group')->pluck('product_group'),
+            'products' => $products,
+        ];
+    }
+
+    /** Tiap Line yang bertaut ke sample menampilkan "Pulled from Follow Up Sample N" (atribut source_followup). */
+    private function attachLineSources(Quote $quote): void
+    {
+        $ids = $quote->lines->pluck('product_sample_id')->filter()->unique()->values();
+        if ($ids->isEmpty()) {
+            return;
+        }
+
+        $samples = ProductSample::whereIn('id', $ids)->get(['id', 'lead_task_id']);
+        $tasks = LeadTask::whereIn('id', $samples->pluck('lead_task_id')->filter())
+            ->where('conclusion', 'NEXT')
+            ->where('reason_code', 'Sample Cocok')
+            ->get(['id', 'code'])
+            ->keyBy('id');
+
+        $numbers = [];
+        foreach ($samples as $s) {
+            $task = $tasks->get($s->lead_task_id);
+            if ($task && preg_match('/^GIVESMPL(\d+)$/', (string) $task->code, $m)) {
+                $numbers[$s->id] = ['number' => (int) $m[1], 'reason' => 'Sample Cocok'];
+            }
+        }
+
+        foreach ($quote->lines as $line) {
+            $line->setAttribute('source_followup', $numbers[$line->product_sample_id] ?? null);
+        }
+    }
+
+    /** Produk terdaftar (punya kode Part Epicor) yang cocok dengan Part dan Rev sample; null bila sample itu Custom B2B. */
+    private function registeredProductFor(ProductSample $s): ?Product
+    {
+        if (! $s->part) {
+            return null;
+        }
+
+        return Product::where('part_num', $s->part)
+            ->whereNotNull('epicor_part_num')
+            ->when($s->rev, fn ($q) => $q->where('revision', $s->rev))
+            ->first();
+    }
+
+    /** Produk placeholder untuk sample yang belum punya Part Epicor (Custom B2B); dipakai ulang bila identitasnya sama. */
+    private function placeholderProductFor(ProductSample $s): Product
+    {
+        // Sample dari item Reguler (sudah teregister sebagai Part Epicor): pakai produk itu, bukan placeholder.
+        if ($registered = $this->registeredProductFor($s)) {
+            return $registered;
+        }
+
+        $part = $s->part ?: 'SAMPLE-'.$s->id;
+
+        $existing = Product::where('part_num', $part)
+            ->whereNull('epicor_part_num')
+            ->when($s->rev, fn ($q) => $q->where('revision', $s->rev), fn ($q) => $q->whereNull('revision'))
+            ->first();
+        if ($existing) {
+            return $existing;
+        }
+
+        $base = Product::query()->first();
+        if (! $base) {
+            throw ValidationException::withMessages(['sample_id' => ['Belum ada produk yang bisa dijadikan dasar produk placeholder sample.']]);
+        }
+
+        $product = $base->replicate();
+        $product->part_num = $part;
+        $product->description = $s->description ?: $part;
+        $product->product_group = $s->product_group;
+        $product->revision = $s->rev;
+        $product->epicor_part_num = null;
+        $product->price = 0;
+        $product->moq_kg = null;
+        $product->save();
+
+        return $product;
+    }
+
+    /** Ikat baris Custom B2B ke Part Epicor terdaftar (dokumen hal. 37). Boleh pada Quotation Win; tidak untuk Lost atau yang sudah punya order. */
+    public function bindPart(Quote $quote, int $lineId, int $productId): Quote
+    {
+        if ($quote->status === Quote::LOST) {
+            throw ValidationException::withMessages(['quote' => ['Quotation sudah ditutup (Lost).']]);
+        }
+        if (SalesOrder::where('quote_id', $quote->id)->exists()) {
+            throw ValidationException::withMessages(['quote' => ['Quotation ini sudah dijadikan order.']]);
+        }
+
+        $line = $quote->lines()->whereKey($lineId)->first();
+        if (! $line) {
+            throw ValidationException::withMessages(['line' => ['Baris tidak ditemukan.']]);
+        }
+
+        $product = Product::whereKey($productId)->whereNotNull('epicor_part_num')->first();
+        if (! $product) {
+            throw ValidationException::withMessages(['product_id' => ['Pilih Part yang sudah teregister di Epicor.']]);
+        }
+
+        $line->update(['product_id' => $product->id]);
+
+        return $quote->load(self::WITH);
     }
 
     public function nextNumber(): string

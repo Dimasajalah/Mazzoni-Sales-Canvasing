@@ -396,7 +396,7 @@ export default function NewOrder() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, marginTop: 8 }}>
             <span>Total</span>
-            <span style={{ color: 'var(--orange)' }}>{fmtRp(total)}</span>
+            <span style={{ color: 'var(--text)' }}>{fmtRp(total)}</span>
           </div>
         </div>
         <button className="btn" type="submit" disabled={saving}>

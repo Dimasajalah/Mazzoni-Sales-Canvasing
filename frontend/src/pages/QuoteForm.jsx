@@ -417,7 +417,7 @@ export default function QuoteForm() {
             {status.label}
           </span>
           {quote.lead?.business_name && (
-            <span className="badge" style={{ background: 'rgba(110,126,158,.14)', color: 'var(--mut)' }}>
+            <span className="badge" style={{ background: 'var(--readonly)', color: 'var(--mut)' }}>
               Prospek: {quote.lead.business_name}
             </span>
           )}
@@ -582,7 +582,7 @@ export default function QuoteForm() {
                 <div className="muted" style={{ fontSize: 12, margin: '0 0 10px' }} data-testid="draft-preview">
                   {draft.qtyKg} Kg ÷ {draftGramasi} gr ={' '}
                   <b style={{ color: 'var(--text)' }}>{draftCalc.pcs.toLocaleString('id-ID')} pcs</b> · strata{' '}
-                  {draftCalc.strata}% · total <b style={{ color: 'var(--orange)' }}>{fmtRp(draftCalc.total)}</b>
+                  {draftCalc.strata}% · total <b style={{ color: 'var(--text)' }}>{fmtRp(draftCalc.total)}</b>
                 </div>
               )}
               {moqShortfall && (
@@ -611,7 +611,7 @@ export default function QuoteForm() {
                 {/* Poin 22: cuma ditampilkan kalau sudah pernah direformula (revisi > 1) — produk
                     normal yang belum pernah direvisi tidak perlu ditandai apa-apa. */}
                 {l.revision > 1 && (
-                  <span className="badge" style={{ background: 'rgba(42,111,214,.14)', color: 'var(--blue)', fontSize: 10, marginLeft: 6 }}>
+                  <span className="badge" style={{ background: 'var(--blue-soft)', color: 'var(--blue)', fontSize: 10, marginLeft: 6 }}>
                     Rev {l.revision}
                   </span>
                 )}
@@ -625,7 +625,7 @@ export default function QuoteForm() {
               </div>
               {l.registered === false && (
                 <div style={{ marginTop: 5 }}>
-                  <span className="badge" style={{ background: 'rgba(220,48,85,.14)', color: 'var(--pink)', fontSize: 10.5 }}>
+                  <span className="badge" style={{ background: 'var(--pink-soft)', color: 'var(--pink)', fontSize: 10.5 }}>
                     ⚠ Belum teregister{l.product_group ? ` · ${l.product_group}` : ''}
                   </span>
                 </div>
@@ -656,7 +656,7 @@ export default function QuoteForm() {
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, marginTop: 8 }}>
           <span>Total</span>
-          <span style={{ color: 'var(--orange)' }}>{fmtRp(total)}</span>
+          <span style={{ color: 'var(--text)' }}>{fmtRp(total)}</span>
         </div>
       </div>
 

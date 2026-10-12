@@ -12,7 +12,7 @@ import NewSample from './pages/NewSample'
 import NewSampleFeedback from './pages/NewSampleFeedback'
 import Login from './pages/Login'
 import Home from './pages/Home'
-import Leads from './pages/Leads'
+import Profile from './pages/Profile'
 import NewLead from './pages/NewLead'
 import Canvassing from './pages/Canvassing'
 import Activities from './pages/Activities'
@@ -23,6 +23,19 @@ import MasterData from './pages/MasterData'
 import NooReport from './pages/NooReport'
 import Customers from './pages/Customers'
 import CustomerDetail from './pages/CustomerDetail'
+import CustomerActivity from './pages/CustomerActivity'
+import ChooseActivity from './pages/ChooseActivity'
+import TaskBrand from './pages/TaskBrand'
+import TaskSample from './pages/TaskSample'
+import TaskFollowUp from './pages/TaskFollowUp'
+import TaskComplete from './pages/TaskComplete'
+import TaskQuote from './pages/TaskQuote'
+import QuoteLines from './pages/QuoteLines'
+import QuoteLineDetail from './pages/QuoteLineDetail'
+import QuoteAddLine from './pages/QuoteAddLine'
+import StorePromo from './pages/StorePromo'
+import OrderCheckout from './pages/OrderCheckout'
+import { useOrderQueueSync } from './hooks/useOrderQueueSync'
 import Stock from './pages/Stock'
 import Promo from './pages/Promo'
 import Visits from './pages/Visits'
@@ -57,6 +70,8 @@ function AppRoutes() {
   const { showToast } = useUi()
   const onSynced = useCallback((count) => showToast(`${count} data offline berhasil disinkronkan`), [showToast])
   useDraftAutoSync(isAuthenticated, onSynced)
+  const onOrdersSynced = useCallback((count) => showToast(`${count} order offline berhasil dikirim`), [showToast])
+  useOrderQueueSync(isAuthenticated, onOrdersSynced)
 
   return (
     <>
@@ -65,7 +80,8 @@ function AppRoutes() {
           <Route path="/login" element={isAuthenticated ? <Navigate to="/home" replace /> : <Login />} />
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<Protected><Home /></Protected>} />
-          <Route path="/leads" element={<Protected><Leads /></Protected>} />
+          <Route path="/profile" element={<Protected><Profile /></Protected>} />
+          <Route path="/leads" element={<Navigate to="/customers" replace />} />
           <Route path="/leads/new" element={<Protected><NewLead /></Protected>} />
           <Route path="/canvassing" element={<Protected><Canvassing /></Protected>} />
           <Route path="/activities" element={<Protected><Activities /></Protected>} />
@@ -77,6 +93,19 @@ function AppRoutes() {
           <Route path="/quotes/:id" element={<Protected><QuoteForm /></Protected>} />
           <Route path="/customers" element={<Protected><Customers /></Protected>} />
           <Route path="/customers/:id" element={<Protected><CustomerDetail /></Protected>} />
+          <Route path="/customers/:id/activity" element={<Protected><CustomerActivity /></Protected>} />
+          <Route path="/choose-activity/:id" element={<Protected><ChooseActivity /></Protected>} />
+          <Route path="/visit/:id/brand" element={<Protected><TaskBrand /></Protected>} />
+          <Route path="/visit/:id/sample" element={<Protected><TaskSample /></Protected>} />
+          <Route path="/visit/:id/followup" element={<Protected><TaskFollowUp /></Protected>} />
+          <Route path="/visit/:id/complete" element={<Protected><TaskComplete /></Protected>} />
+          <Route path="/visit/:id/quote" element={<Protected><TaskQuote /></Protected>} />
+          <Route path="/quotes/:id/lines" element={<Protected><QuoteLines /></Protected>} />
+          <Route path="/quotes/:id/lines/add" element={<Protected><QuoteAddLine /></Protected>} />
+          <Route path="/visit/:id/promo" element={<Protected><StorePromo /></Protected>} />
+          <Route path="/visit/:id/order" element={<Protected><OrderCheckout /></Protected>} />
+          <Route path="/quotes/:id/lines/new" element={<Protected><QuoteLineDetail /></Protected>} />
+          <Route path="/quotes/:id/lines/:lineId" element={<Protected><QuoteLineDetail /></Protected>} />
           <Route path="/stock" element={<Protected><Stock /></Protected>} />
           <Route path="/promo" element={<Protected><Promo /></Protected>} />
           <Route path="/visits" element={<Protected><Visits /></Protected>} />

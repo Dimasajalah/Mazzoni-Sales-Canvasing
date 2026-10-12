@@ -8,8 +8,8 @@ import { listOf } from '../lib/format'
 const ST = {
   SUBMITTED: ['Diajukan', 'var(--amber)'],
   VERIFIED: ['Diverifikasi', 'var(--blue)'],
-  APPROVED: ['Disetujui', 'var(--green)'],
-  RMA_ISSUED: ['RMA terbit', 'var(--green)'],
+  APPROVED: ['Disetujui', 'var(--green-ink)'],
+  RMA_ISSUED: ['RMA terbit', 'var(--green-ink)'],
   REJECTED: ['Ditolak', 'var(--pink)'],
 }
 
@@ -71,7 +71,7 @@ export default function Returns() {
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
                 <span className="badge" style={{ background: `${col}22`, color: col }}>{lbl}</span>
                 {r.rma_number ? (
-                  <span className="badge" style={{ background: 'rgba(46,212,122,.16)', color: 'var(--green)' }}>
+                  <span className="badge" style={{ background: 'var(--green-soft)', color: 'var(--green-ink)' }}>
                     {r.rma_number}
                   </span>
                 ) : null}

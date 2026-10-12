@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Customer extends Model
 {
@@ -30,6 +31,12 @@ class Customer extends Model
     public function salesperson(): BelongsTo
     {
         return $this->belongsTo(User::class, 'salesperson_id');
+    }
+
+    /** Lead asal customer ini (leads.customer_id). Yang terbaru bila ada lebih dari satu. */
+    public function lead(): HasOne
+    {
+        return $this->hasOne(Lead::class)->latestOfMany();
     }
 
     public function visits(): HasMany

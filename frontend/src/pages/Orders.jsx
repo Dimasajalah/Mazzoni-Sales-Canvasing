@@ -7,8 +7,8 @@ import { useUi } from '../context/UiContext'
 import { fmtRp, listOf } from '../lib/format'
 
 function statusColor(status) {
-  if (status === 'HOLD') return '#d32f2f'
-  if (status === 'CONFIRMED') return 'var(--orange)'
+  if (status === 'HOLD') return '#8F1228'
+  if (status === 'CONFIRMED') return '#1D4F9F'
   return '#999'
 }
 

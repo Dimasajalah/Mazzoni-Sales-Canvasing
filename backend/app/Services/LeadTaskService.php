@@ -28,14 +28,14 @@ class LeadTaskService
      * Menggantikan 7 langkah lama yang berbasis tugas aktif; sekarang langsung dari status_customer.
      */
     public const STATUS_CUSTOMER_STEPS = [
-        Lead::STATUS_LEAD => ['label' => 'Lead', 'color' => 'var(--mut)'],
-        Lead::STATUS_PROSPEK => ['label' => 'Prospek', 'color' => 'var(--orange2)'],
-        Lead::STATUS_BRAND_AWARENESS => ['label' => 'Brand Awareness', 'color' => 'var(--blue)'],
-        Lead::STATUS_SAMPLING => ['label' => 'Sampling', 'color' => '#7C5CFC'],
-        Lead::STATUS_QUOTATION => ['label' => 'Quotation', 'color' => 'var(--amber)'],
-        Lead::STATUS_WIN => ['label' => 'Win', 'color' => 'var(--green)'],
-        Lead::STATUS_LOSE => ['label' => 'Lose', 'color' => 'var(--pink)'],
-        Lead::STATUS_DISTRIBUTION => ['label' => 'Distribution', 'color' => '#0B7A46'],
+        Lead::STATUS_LEAD => ['label' => 'Lead', 'color' => '#5B6577'],
+        Lead::STATUS_PROSPEK => ['label' => 'Prospek', 'color' => '#3D4656'],
+        Lead::STATUS_BRAND_AWARENESS => ['label' => 'Brand Awareness', 'color' => '#1D4F9F'],
+        Lead::STATUS_SAMPLING => ['label' => 'Sampling', 'color' => '#9A6000'],
+        Lead::STATUS_QUOTATION => ['label' => 'Quotation', 'color' => '#5128A6'],
+        Lead::STATUS_WIN => ['label' => 'Win', 'color' => '#1B7F4B'],
+        Lead::STATUS_LOSE => ['label' => 'Lose', 'color' => '#8F1228'],
+        Lead::STATUS_DISTRIBUTION => ['label' => 'Distribution', 'color' => '#1A2233'],
     ];
 
     /**
@@ -118,7 +118,7 @@ class LeadTaskService
         }
 
         return DB::transaction(function () use ($task, $lead, $conclusion, $actor, $data) {
-            $this->finishTask($task, $conclusion, $data['remark'] ?? null, $data['reason_code'] ?? null);
+            $this->finishTask($task, $conclusion, $data['remark'] ?? null, $data['reason_code'] ?? null, $data['task_status'] ?? null);
             if ($conclusion === 'WIN') {
                 app(QuoteService::class)->ensureDraftForLead($lead, $actor);
             }
@@ -280,14 +280,16 @@ class LeadTaskService
             ]);
         }
 
-        if ($template->seq === $task->seq) {
+        // Revisi sample (dokumen hal. 30): Follow Up Sample boleh kembali ke Pemberian Sample (nomor berikutnya,
+        // GIVESMPL2, ...). Tugas lain tetap tidak boleh memilih dirinya sendiri.
+        if ($template->seq === $task->seq && $template->pipeline_step !== 'sampling') {
             throw ValidationException::withMessages([
                 'next_template_id' => ['Tugas berikutnya tidak boleh sama dengan tugas saat ini.'],
             ]);
         }
 
         DB::transaction(function () use ($task, $lead, $template, $actor, $data) {
-            $this->finishTask($task, 'NEXT', $data['remark'] ?? null, $data['reason_code'] ?? null);
+            $this->finishTask($task, 'NEXT', $data['remark'] ?? null, $data['reason_code'] ?? null, $data['task_status'] ?? null);
 
             $next = $this->createFromTemplate(
                 $lead,
@@ -316,12 +318,13 @@ class LeadTaskService
         return $task->fresh();
     }
 
-    private function finishTask(LeadTask $task, string $conclusion, ?string $remark, ?string $reasonCode = null): void
+    private function finishTask(LeadTask $task, string $conclusion, ?string $remark, ?string $reasonCode = null, ?string $taskStatus = null): void
     {
         $task->update([
             'status' => LeadTask::DONE,
             'conclusion' => $conclusion,
             'reason_code' => $reasonCode,
+            'task_status' => $taskStatus ?: $task->task_status,
             'pct_complete' => 100,
             'completed_at' => now(),
             'remark' => $remark ?: $task->remark,

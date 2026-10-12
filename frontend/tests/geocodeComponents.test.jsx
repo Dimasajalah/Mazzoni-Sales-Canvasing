@@ -10,7 +10,9 @@ import { pickGoogleComponents, reverseGeocode, searchAddress } from '../src/lib/
 const comp = (long_name, ...types) => ({ long_name, short_name: long_name, types })
 const loc = (lat, lng) => ({ lat: () => lat, lng: () => lng })
 
-beforeEach(() => geocodeFn.mockReset())
+beforeEach(() => {
+  geocodeFn.mockReset()
+})
 
 describe('pickGoogleComponents', () => {
   it('DKI Jakarta: level_1 = provinsi, level_2 = kota administrasi', () => {

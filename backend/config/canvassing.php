@@ -12,7 +12,7 @@ return [
     */
     'data_source' => env('DATA_SOURCE', 'staging'),
 
-    'visit_radius_meters' => (int) env('VISIT_RADIUS_METERS', 500),
+    'visit_radius_meters' => (int) env('VISIT_RADIUS_METERS', 150),
 
     /*
     | Pembulatan konversi Kg -> pcs (pcs = Kg x 1000 / gramasi gr).

@@ -1,0 +1,25 @@
+/* ===== 02 New Lead Registration (dokumen hal. 12) ===== */
+.nl-draft{ flex:none; padding:4px 10px; border-radius:10px; background:var(--gold); color:var(--text);
+  font-size:10px; font-weight:800; letter-spacing:.6px; }
+.nl-meta{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.nl-m{ display:flex; align-items:center; gap:10px; padding:10px 12px; border:1.5px dashed var(--stroke);
+  border-radius:14px; background:transparent; color:var(--faint); }
+.nl-m small{ display:block; font-size:9.5px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:var(--faint); }
+.nl-m b{ display:block; margin-top:1px; font-size:13px; font-weight:800; color:var(--text); }
+.nl-card{ margin-bottom:12px; padding:14px; background:#FFFFFF; border:1px solid var(--stroke); border-radius:16px; }
+.nl-h{ display:flex; align-items:center; gap:8px; margin:0 0 12px; font-size:13.5px; font-weight:800; color:var(--text); }
+.nl-h svg{ color:var(--mut); flex:none; }
+.nl-card .field{ margin-bottom:12px; }
+.nl-card .field:last-child{ margin-bottom:0; }
+.nl-card .field label,.nl-lab{ display:block; margin-bottom:6px; font-size:12px; font-weight:800; color:var(--text); }
+.nl-card input,.nl-card select,.nl-card textarea{ border-radius:12px; }
+.nl-card input[readonly]{ background:var(--readonly); color:var(--faint); cursor:default; }
+.nl-note{ margin:-4px 0 12px; font-size:10.5px; line-height:1.45; color:var(--faint); }
+.nl-mapnote{ display:inline-block; margin:8px 0 12px; padding:5px 11px; border-radius:14px;
+  background:rgba(23,32,43,.88); color:#FFFFFF; font-size:11px; font-weight:700; }
+.nl-segs{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.nl-segs button{ padding:12px; border-radius:12px; border:1px solid var(--stroke); background:#FFFFFF; color:var(--text);
+  font-size:13.5px; font-weight:800; cursor:pointer; font-family:inherit; }
+.nl-segs button.on{ background:var(--text); border-color:var(--text); color:#FFFFFF; }
+.nl-foot{ position:sticky; bottom:0; z-index:5; margin:16px -18px -24px; padding:12px 18px;
+  background:#FFFFFF; border-top:1px solid var(--stroke); }

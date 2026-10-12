@@ -113,7 +113,7 @@ export function ConclusionFields({ isClosing, fields }) {
               <input
                 readOnly
                 value={nextTpl ? STAGE_LABEL[nextTpl.stage] || nextTpl.stage : '—'}
-                style={{ background: '#E9EEF6', cursor: 'default' }}
+                style={{ background: 'var(--readonly)', cursor: 'default' }}
               />
             </Field>
             <Field label="Jadwal tugas berikutnya (opsional)" style={{ margin: 0 }}>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,7 +57,70 @@ class CustomerController extends Controller
             return ApiResponse::error('Customer tidak ditemukan', null, 404);
         }
 
+        $customer->load('lead.currentTask.assignee:id,name');
+
         return ApiResponse::success($customer);
+    }
+
+    /** Log aktivitas customer (dokumen hal. 18). ?limit=10 (bawaan), maksimum 1000. */
+    public function activity(Request $request, int $id): JsonResponse
+    {
+        $customer = $this->customerService->find($id);
+        if (! $customer) {
+            return ApiResponse::error('Customer tidak ditemukan', null, 404);
+        }
+
+        $limit = max(1, min(1000, (int) $request->get('limit', 10)));
+
+        return ApiResponse::success($this->customerService->activityLog($customer, $limit));
+    }
+
+    /** Calon penerima serah-terima PIC (dokumen hal. 20): sales aktif selain PIC saat ini. */
+    public function picTargets(int $id): JsonResponse
+    {
+        $customer = $this->customerService->find($id);
+        if (! $customer) {
+            return ApiResponse::error('Customer tidak ditemukan', null, 404);
+        }
+
+        return ApiResponse::success(
+            User::query()
+                ->where('active', true)
+                ->where('role', 'sales')
+                ->where('id', '!=', (int) $customer->salesperson_id)
+                ->orderBy('name')
+                ->get(['id', 'name', 'salesperson_code', 'territory'])
+        );
+    }
+
+    /** Menyerahkan PIC customer ke sales lain. Hanya PIC saat ini, supervisor, atau admin. */
+    public function delegatePic(Request $request, int $id): JsonResponse
+    {
+        $customer = $this->customerService->find($id);
+        if (! $customer) {
+            return ApiResponse::error('Customer tidak ditemukan', null, 404);
+        }
+
+        $user = $request->user();
+        $isManager = in_array($user->role, ['admin', 'supervisor'], true);
+        if (! $isManager && (int) $customer->salesperson_id !== (int) $user->id) {
+            return ApiResponse::error('Hanya PIC saat ini, supervisor, atau admin yang dapat menyerahkan customer ini', null, 403);
+        }
+
+        $data = $request->validate(['to_user_id' => ['required', 'integer', 'exists:users,id']]);
+
+        $target = User::query()->where('id', $data['to_user_id'])->where('active', true)->where('role', 'sales')->first();
+        if (! $target) {
+            return ApiResponse::error('Sales tujuan tidak valid', null, 422);
+        }
+        if ((int) $target->id === (int) $customer->salesperson_id) {
+            return ApiResponse::error('Customer sudah berada di bawah sales ini', null, 422);
+        }
+
+        return ApiResponse::success(
+            $this->customerService->delegatePic($customer, $target, $user),
+            'PIC customer dipindahkan'
+        );
     }
 
     public function update(Request $request, int $id): JsonResponse

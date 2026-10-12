@@ -7,6 +7,7 @@ C:.
 |   README.md
 |   structure.txt
 |   structure2.txt
+|   structure_01.txt
 |   VERSION
 |   
 +---backend
@@ -259,6 +260,7 @@ C:.
 |   |   |       2026_10_07_000001_add_revision_to_products.php
 |   |   |       2026_10_08_000001_make_visits_support_leads.php
 |   |   |       2026_10_09_000001_remove_negotiation_action_from_tasks.php
+|   |   |       2026_10_10_000001_make_feedback_type_nullable_on_sample_feedbacks.php
 |   |   |       
 |   |   \---seeders
 |   |           DatabaseSeeder.php
@@ -331,7 +333,7 @@ C:.
 |   |   |   |       \---public
 |   |   |   |           \---leads
 |   |   |   |               \---1
-|   |   |   |                       a1lfZN77pwpfa8Vb2DnmGkCan2wFI1o7rxKkSNjV.jpg
+|   |   |   |                       UsgoS6MSKxdeEMMtSQuybGpQ3UVAk0ytYj9BYs6V.jpg
 |   |   |   |                       
 |   |   |   \---views
 |   |   |           .gitignore
@@ -379,6 +381,8 @@ C:.
 |   |   |       
 |   |   \---Unit
 |   |           ExampleTest.php
+|   |           
+|   \---vendor
 +---frontend
 |   |   .env
 |   |   .env.example
@@ -390,126 +394,133 @@ C:.
 |   |   package-lock.json
 |   |   package.json
 |   |   README.md
+|   |   structure_01.txt
 |   |   vite.config.js
 |   |   vitest.config.js
 |   |   
 |   +---android
-|   +---public
-|   |       favicon.svg
-|   |       icons.svg
-|   |       mazzoni-logo.png
++---public
+|       favicon.svg
+|       icons.svg
+|       mazzoni-logo.png
+|       
++---src
+|   |   App.jsx
+|   |   index.css
+|   |   main.jsx
+|   |   
+|   +---api
+|   |       auth.js
+|   |       client.js
+|   |       index.js
 |   |       
-|   +---src
-|   |   |   App.jsx
-|   |   |   index.css
-|   |   |   main.jsx
+|   +---assets
+|   |       hero.png
+|   |       react.svg
+|   |       vite.svg
+|   |       
+|   +---components
+|   |   |   BottomNav.jsx
+|   |   |   CheckinMap.jsx
+|   |   |   ConclusionFields.jsx
+|   |   |   Field.jsx
+|   |   |   GlobalSearch.jsx
+|   |   |   LeadCard.jsx
+|   |   |   LeadTaskPanel.jsx
+|   |   |   LocationPicker.jsx
+|   |   |   PhoneFrame.jsx
+|   |   |   PhotoUpload.jsx
+|   |   |   ProductGroupField.jsx
+|   |   |   TaskFields.jsx
+|   |   |   TaskFieldsGrid.jsx
+|   |   |   ui.jsx
+|   |   |   VisitsMap.jsx
 |   |   |   
-|   |   +---api
-|   |   |       auth.js
-|   |   |       client.js
-|   |   |       index.js
-|   |   |       
-|   |   +---assets
-|   |   |       hero.png
-|   |   |       react.svg
-|   |   |       vite.svg
-|   |   |       
-|   |   +---components
-|   |   |   |   BottomNav.jsx
-|   |   |   |   CheckinMap.jsx
-|   |   |   |   ConclusionFields.jsx
-|   |   |   |   Field.jsx
-|   |   |   |   GlobalSearch.jsx
-|   |   |   |   LeadCard.jsx
-|   |   |   |   LeadTaskPanel.jsx
-|   |   |   |   LocationPicker.jsx
-|   |   |   |   PhoneFrame.jsx
-|   |   |   |   PhotoUpload.jsx
-|   |   |   |   ProductGroupField.jsx
-|   |   |   |   ui.jsx
-|   |   |   |   VisitsMap.jsx
-|   |   |   |   
-|   |   |   \---master
-|   |   |           CodeMapAdmin.jsx
-|   |   |           PackagingAdmin.jsx
-|   |   |           StrataAdmin.jsx
-|   |   |           TeamAdmin.jsx
-|   |   |           
-|   |   +---context
-|   |   |       AuthContext.jsx
-|   |   |       UiContext.jsx
-|   |   |       
-|   |   +---hooks
-|   |   |       useDebounce.js
-|   |   |       useDraftAutoSync.js
-|   |   |       useDraftSync.js
-|   |   |       useGeolocation.js
-|   |   |       useOnline.js
-|   |   |       
-|   |   +---lib
-|   |   |       drafts.js
-|   |   |       draftSync.js
-|   |   |       format.js
-|   |   |       geocode.js
-|   |   |       mapIcons.js
-|   |   |       packaging.js
-|   |   |       roles.js
-|   |   |       uuid.js
-|   |   |       wilayah.js
-|   |   |       
-|   |   +---pages
-|   |   |       Activities.jsx
-|   |   |       ArReport.jsx
-|   |   |       Canvassing.jsx
-|   |   |       Checkin.jsx
-|   |   |       CustomerDetail.jsx
-|   |   |       Customers.jsx
-|   |   |       Delegations.jsx
-|   |   |       Expenses.jsx
-|   |   |       Home.jsx
-|   |   |       Leads.jsx
-|   |   |       Login.jsx
-|   |   |       MasterData.jsx
-|   |   |       NewExpense.jsx
-|   |   |       NewLead.jsx
-|   |   |       NewOrder.jsx
-|   |   |       NewReturn.jsx
-|   |   |       NewSample.jsx
-|   |   |       NewSampleFeedback.jsx
-|   |   |       NooReport.jsx
-|   |   |       Orders.jsx
-|   |   |       Payment.jsx
-|   |   |       Promo.jsx
-|   |   |       QuoteForm.jsx
-|   |   |       Quotes.jsx
-|   |   |       Returns.jsx
-|   |   |       Stock.jsx
-|   |   |       Tracker.jsx
-|   |   |       VisitMode.jsx
-|   |   |       Visits.jsx
-|   |   |       
-|   |   \---styles
-|   |           prototype.css
+|   |   \---master
+|   |           CodeMapAdmin.jsx
+|   |           PackagingAdmin.jsx
+|   |           StrataAdmin.jsx
+|   |           TeamAdmin.jsx
 |   |           
-|   \---tests
-|           agingBuckets.test.jsx
-|           apiClient.test.jsx
-|           customerDetailActivity.test.jsx
-|           draftSync.test.jsx
-|           leadTaskPanel.test.jsx
-|           locationPicker.test.jsx
-|           locationPickerNestedForm.test.jsx
-|           newSample.test.jsx
-|           newSampleFeedback.test.jsx
-|           packaging.test.jsx
-|           pages.test.jsx
-|           quotePaymentTerm.test.jsx
-|           quotes.test.jsx
-|           roles.test.jsx
-|           setup.js
-|           visits.test.jsx
-|           wilayah.test.jsx
+|   +---context
+|   |       AuthContext.jsx
+|   |       UiContext.jsx
+|   |       
+|   +---hooks
+|   |       useDebounce.js
+|   |       useDraftAutoSync.js
+|   |       useDraftSync.js
+|   |       useGeolocation.js
+|   |       useOnline.js
+|   |       
+|   +---lib
+|   |       drafts.js
+|   |       draftSync.js
+|   |       format.js
+|   |       geocode.js
+|   |       googleMaps.js
+|   |       mapIcons.js
+|   |       packaging.js
+|   |       roles.js
+|   |       uuid.js
+|   |       wilayah.js
+|   |       
+|   +---pages
+|   |       Activities.jsx
+|   |       ArReport.jsx
+|   |       Canvassing.jsx
+|   |       Checkin.jsx
+|   |       CustomerDetail.jsx
+|   |       Customers.jsx
+|   |       Delegations.jsx
+|   |       Expenses.jsx
+|   |       Home.jsx
+|   |       Leads.jsx
+|   |       Login.jsx
+|   |       MasterData.jsx
+|   |       NewExpense.jsx
+|   |       NewLead.jsx
+|   |       NewOrder.jsx
+|   |       NewReturn.jsx
+|   |       NewSample.jsx
+|   |       NewSampleFeedback.jsx
+|   |       NooReport.jsx
+|   |       Orders.jsx
+|   |       Payment.jsx
+|   |       Promo.jsx
+|   |       QuoteForm.jsx
+|   |       Quotes.jsx
+|   |       Returns.jsx
+|   |       Stock.jsx
+|   |       Tracker.jsx
+|   |       VisitMode.jsx
+|   |       Visits.jsx
+|   |       
+|   \---styles
+|           prototype.css
 |           
-\---scripts
-        backup-version.ps1
-        bump-version.ps1
+\---tests
+    |   agingBuckets.test.jsx
+    |   apiClient.test.jsx
+    |   customerDetailActivity.test.jsx
+    |   draftSync.test.jsx
+    |   geocodeComponents.test.jsx
+    |   leadTaskPanel.test.jsx
+    |   locationPicker.test.jsx
+    |   locationPickerNestedForm.test.jsx
+    |   newSample.test.jsx
+    |   newSampleFeedback.test.jsx
+    |   packaging.test.jsx
+    |   pages.test.jsx
+    |   quotePaymentTerm.test.jsx
+    |   quotes.test.jsx
+    |   roles.test.jsx
+    |   setup.js
+    |   taskFields.test.jsx
+    |   visits.test.jsx
+    |   wilayah.test.jsx
+    |   wilayahMatch.test.jsx
+    |   
+    \---helpers
+            fakeGoogleMaps.js
+            

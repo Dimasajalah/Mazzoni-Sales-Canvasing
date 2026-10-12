@@ -1,4 +1,4 @@
-// Poin 9: field tugas seragam di kartu utama, Form Brand, Selesaikan Tugas, Feedback Sample.
+//frontend/src/components/TaskFields.jsx
 import { STAGE_LABEL } from '../lib/format'
 
 export const TASK_STATUS_LABEL = { OPEN: 'Berjalan', DONE: 'Selesai' }

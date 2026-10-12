@@ -62,7 +62,7 @@ export default function Activities() {
 
       <div className="card" style={{ padding: 0, marginBottom: 14, overflow: 'hidden' }}>
         <div
-          style={{ background: '#FFF6E6', padding: '9px 14px', fontSize: 11, fontWeight: 800, color: '#7A4E00', letterSpacing: 1 }}
+          style={{ background: 'var(--amber-soft)', padding: '9px 14px', fontSize: 11, fontWeight: 800, color: 'var(--amber-ink)', letterSpacing: 1 }}
         >
           TINDAK LANJUT
         </div>

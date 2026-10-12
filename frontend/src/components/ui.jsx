@@ -69,7 +69,7 @@ export function ListItem({ barColor, avatar, title, subtitle, right, onClick }) 
     <div className="card li" style={{ padding: 12 }} onClick={onClick} role={onClick ? 'button' : undefined}>
       {barColor ? <div className="barL" style={{ background: barColor }} /> : null}
       {avatar ? (
-        <div className="av" style={{ background: 'rgba(238,106,10,.12)', color: 'var(--orange)' }}>
+        <div className="av" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}>
           {avatar}
         </div>
       ) : null}
@@ -89,7 +89,7 @@ export function AgingBuckets({ buckets = [0, 0, 0, 0], hideCurrent = false }) {
   const cells = [
     { l: 'Lancar', v: buckets[0], c: 'var(--green)' },
     { l: '1-30', v: buckets[1], c: 'var(--amber)' },
-    { l: '31-60', v: buckets[2], c: '#FF8A3D' },
+    { l: '31-60', v: buckets[2], c: '#C2410C' },
     { l: '60+', v: buckets[3], c: 'var(--pink)' },
   ].filter((b) => !hideCurrent || b.l !== 'Lancar')
   return (

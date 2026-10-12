@@ -1,5 +1,6 @@
 <?php
-
+//backend/routes/api.php
+use App\Http\Controllers\Api\V1\LeadPromoController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\V1\ARController;
 use App\Http\Controllers\Api\V1\CodeMappingController;
@@ -54,6 +55,9 @@ Route::prefix('v1')->group(function () {
         Route::patch('/lead-tasks/{id}', [LeadTaskController::class, 'update']);
         Route::post('/lead-tasks/{id}/conclude', [LeadTaskController::class, 'conclude']);
         Route::get('/task-templates', [TaskController::class, 'templates']);
+        Route::post('/quotes/{id}/lines/replace', [QuoteController::class, 'replaceLines']);
+        Route::get('/quotes/{id}/approved-samples', [QuoteController::class, 'approvedSamples']);
+        Route::get('/quotes/{id}/product-search', [QuoteController::class, 'productSearch']);
 
         // Kemasan/gramasi, strata, mapping kode, kompetitor (Tahap 4-5)
         Route::get('/product-packagings', [ProductPackagingController::class, 'index']);
@@ -91,14 +95,24 @@ Route::prefix('v1')->group(function () {
         Route::post('/quotes', [QuoteController::class, 'store']);
         Route::get('/quotes/{id}', [QuoteController::class, 'show']);
         Route::patch('/quotes/{id}', [QuoteController::class, 'update']);
+        Route::post('/quotes/{id}/header', [QuoteController::class, 'update']);
+        Route::get('/quotes/{id}/pdf', [QuoteController::class, 'pdf']);
         Route::put('/quotes/{id}/lines', [QuoteController::class, 'replaceLines']);
         Route::post('/quotes/{id}/mark-quoted', [QuoteController::class, 'markQuoted']);
         Route::post('/quotes/{id}/competitors', [QuoteController::class, 'attachCompetitor']);
         Route::delete('/quotes/{id}/competitors/{competitorId}', [QuoteController::class, 'detachCompetitor']);
         Route::post('/quotes/{id}/convert-to-order', [QuoteController::class, 'convertToOrder']);
+        Route::get('/leads/{id}/promos', [LeadPromoController::class, 'index']);
+        Route::post('/leads/{id}/promos', [LeadPromoController::class, 'apply']);
+        Route::post('/leads/{id}/promos/remove', [LeadPromoController::class, 'remove']);
+        Route::post('/quotes/{id}/lines/{lineId}/bind-part', [QuoteController::class, 'bindPart']);
+        Route::post('/quotes/{id}/checkout', [QuoteController::class, 'convertToOrder']);
 
         Route::apiResource('customers', CustomerController::class);
         Route::get('/customers/{id}/aging', [ARController::class, 'customerAging']);
+        Route::get('/customers/{id}/activity', [CustomerController::class, 'activity']);
+        Route::get('/customers/{id}/pic-targets', [CustomerController::class, 'picTargets']);
+        Route::post('/customers/{id}/delegate-pic', [CustomerController::class, 'delegatePic']);
 
         Route::get('/visits', [VisitController::class, 'index']);
         Route::get('/visits/{id}', [VisitController::class, 'show']);

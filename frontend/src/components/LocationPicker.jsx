@@ -241,7 +241,7 @@ export default function LocationPicker({ value, onChange, onAddressChange, heigh
         {mapError ? (
           <div
             className="muted lp-msg"
-            style={{ position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', gap: 8, padding: 16, textAlign: 'center', background: '#F7F9FC' }}
+            style={{ position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', gap: 8, padding: 16, textAlign: 'center', background: 'var(--card2)' }}
           >
             <div>{mapError}</div>
             <button type="button" className="btn ghost sm" style={{ justifySelf: 'center' }} onClick={() => setAttempt((a) => a + 1)}>

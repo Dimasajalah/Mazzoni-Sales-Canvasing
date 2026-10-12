@@ -25,13 +25,15 @@ class QuoteController extends Controller
         'follow_up_date' => ['nullable', 'date'],
         'expires_at' => ['nullable', 'date'],
         'terms' => ['nullable', 'string', 'max:2000'],
-        'payment_term' => ['nullable', 'in:15D,30D,45D'], // samakan dengan QuoteService::PAYMENT_TERMS
+        'payment_term' => ['nullable', 'in:15D,30D,45D,COD'], // samakan dengan QuoteService::PAYMENT_TERMS
         'notes' => ['nullable', 'string', 'max:2000'],
     ];
 
     private const LINE_RULES = [
-        'lines.*.product_id' => ['required', 'exists:products,id'],
+        'lines.*.product_id' => ['required_without:lines.*.sample_id', 'nullable', 'exists:products,id'],
+        'lines.*.sample_id' => ['nullable', 'exists:product_samples,id'],
         'lines.*.qty_kg' => ['required', 'numeric', 'gt:0'],
+        'lines.*.qty_pcs' => ['nullable', 'numeric', 'gt:0'],
         'lines.*.packaging_id' => ['nullable', 'exists:product_packagings,id'],
         'lines.*.gramasi_gr' => ['nullable', 'numeric', 'gt:0'],
         'lines.*.unit_price' => ['nullable', 'numeric', 'min:0'],
@@ -145,6 +147,74 @@ class QuoteController extends Controller
         [$quote, $error] = $this->resolve($request->user(), $id);
 
         return $error ?? ApiResponse::success($this->quotes->detachCompetitor($quote, $competitorId), 'Kompetitor dilepas');
+    }
+
+    /** Unduh Quotation sebagai PDF (dokumen hal. 32). Dikirim sebagai base64 di dalam JSON agar bisa diambil lewat klien API biasa. */
+    public function pdf(Request $request, int $id): JsonResponse
+    {
+        [$quote, $error] = $this->resolve($request->user(), $id, allowDelegate: true);
+        if ($error) {
+            return $error;
+        }
+
+        $quote->load([
+            'lead:id,business_name,address,phone',
+            'customer:id,name,customer_code,address,city,phone',
+            'salesperson:id,name,email',
+        ]);
+
+        $binary = \Barryvdh\DomPDF\Facade\Pdf::loadView('quotes.pdf', ['quote' => $quote])->setPaper('a4')->output();
+
+        $code = $quote->lead_id ? 'QUO-'.(10000 + (int) $quote->lead_id) : $quote->quote_number;
+
+        return ApiResponse::success([
+            'filename' => 'Quotation-'.$code.'.pdf',
+            'mime' => 'application/pdf',
+            'base64' => base64_encode($binary),
+        ]);
+    }
+
+    /** Sample yang disetujui (Follow Up "Sample Cocok") untuk prospek Quotation ini (dokumen hal. 35). */
+    public function approvedSamples(Request $request, int $id): JsonResponse
+    {
+        [$quote, $error] = $this->resolve($request->user(), $id, allowDelegate: true);
+
+        return $error ?? ApiResponse::success($this->quotes->approvedSamples($quote));
+    }
+
+    /** Pencarian produk manual untuk Add Blank Line. */
+    public function productSearch(Request $request, int $id): JsonResponse
+    {
+        [$quote, $error] = $this->resolve($request->user(), $id, allowDelegate: true);
+        if ($error) {
+            return $error;
+        }
+
+        $filters = $request->validate([
+            'id' => ['nullable', 'integer'],
+            'q' => ['nullable', 'string', 'max:100'],
+            'product_group' => ['nullable', 'string', 'max:100'],
+            'registered' => ['nullable', 'boolean'],
+        ]);
+
+        return ApiResponse::success($this->quotes->searchProducts($filters));
+    }
+
+    /** Ikat baris Custom B2B ke Part Epicor yang sudah teregister (dokumen hal. 37, Confirm Part). */
+    public function bindPart(Request $request, int $id, int $lineId): JsonResponse
+    {
+        if (! $request->user()->canOrder()) {
+            return ApiResponse::error('Sales Dealmaker tidak dapat membuat order. Delegasikan prospek yang sudah Win ke Sales Order.', null, 403);
+        }
+
+        [$quote, $error] = $this->resolve($request->user(), $id, allowDelegate: true);
+        if ($error) {
+            return $error;
+        }
+
+        $data = $request->validate(['product_id' => ['required', 'exists:products,id']]);
+
+        return ApiResponse::success($this->quotes->bindPart($quote, $lineId, (int) $data['product_id']), 'Part terikat');
     }
 
     public function convertToOrder(Request $request, int $id): JsonResponse

@@ -1,0 +1,28 @@
+/* ===== 07 Choose Activity (dokumen hal. 24) ===== */
+.ca-chip{ flex:none; display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:16px;
+  background:var(--green-soft); color:var(--green-ink); font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; }
+.ca-hero{ margin:4px 0 20px; border:1px solid var(--stroke); border-radius:16px; overflow:hidden; background:#FFFFFF; }
+.ca-hero-top{ height:96px; display:grid; place-items:center; color:#FFFFFF;
+  background:linear-gradient(135deg,#17202B,#1F4FBF); background-size:cover; background-position:center; }
+.ca-hero-body{ padding:14px 16px; }
+.ca-name{ font-size:16px; font-weight:800; color:var(--text); }
+.ca-addr{ margin-top:2px; font-size:12px; color:var(--faint); }
+.ca-h{ margin:0 2px 2px; font-size:16px; font-weight:800; color:var(--text); }
+.ca-sub{ margin:0 2px 12px; font-size:12.5px; color:var(--faint); }
+.ca-opt{ display:flex; align-items:center; gap:14px; width:100%; margin-bottom:12px; padding:14px; background:#FFFFFF;
+  border:1px solid var(--stroke); border-radius:16px; text-align:left; cursor:pointer; font-family:inherit; }
+.ca-opt:disabled{ opacity:.6; cursor:default; }
+.ca-opt.hot{ border-color:var(--primary); box-shadow:0 6px 18px rgba(200,35,58,.12); }
+.ca-ic{ flex:none; width:44px; height:44px; border-radius:13px; display:grid; place-items:center; }
+.ca-ic.red{ background:var(--primary-soft); color:var(--primary); }
+.ca-ic.blue{ background:var(--blue-soft); color:var(--blue); }
+.ca-ic.violet{ background:var(--purple-soft); color:var(--purple); }
+.ca-ic.green{ background:var(--green-soft); color:var(--green); }
+.ca-t{ font-size:14.5px; font-weight:800; color:var(--text); }
+.ca-s{ margin-top:2px; font-size:12px; line-height:1.4; color:var(--faint); }
+.ca-chev{ margin-left:auto; font-size:20px; color:var(--faint); }
+.ca-opt.hot .ca-chev{ color:var(--primary); }
+.ca-note{ margin:6px 8px 14px; text-align:center; font-size:11.5px; line-height:1.45; color:var(--faint); }
+.ca-end{ display:block; width:100%; padding:13px; border-radius:12px; border:1px solid var(--stroke); background:#FFFFFF;
+  color:var(--text); font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; }
+.ca-empty{ margin:0 0 12px; padding:14px; border:1px dashed var(--stroke); border-radius:14px; font-size:12.5px; color:var(--faint); }

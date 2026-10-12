@@ -19,6 +19,8 @@ import { useAuth } from '../context/AuthContext'
 import { TaskFields } from './TaskFields'
 import { TaskFieldsGrid } from './TaskFieldsGrid'
 import { ConclusionFields, useConclusionFields } from './ConclusionFields'
+import { TaskCompletion, useTaskCompletion } from './TaskCompletion'
+import { TaskHeader } from './TaskHeader'
 import { dueMeta, listOf, STAGE_LABEL, stageColor, winLossMeta } from '../lib/format'
 import { canDelegate, canOrder } from '../lib/roles'
 import { Field } from './Field'
@@ -27,8 +29,11 @@ export const TASK_ICON = {
     'Desk Call': '☎️',
     'Panggilan Telepon': '📞',
     Kunjungan: '📍',
+    'Lead engagement': '📍',
+    Sampling: '🎁',
     Meeting: '🤝',
     Quote: '📄',
+    'Create Quote': '📄',
     'Follow-up': '🔁',
 }
 
@@ -67,12 +72,12 @@ function BackLink({ onClick }) {
     )
 }
 
-export default function LeadTaskPanel({ lead, task: initialTask, onChanged, onClose, showToast, hideCheckin }) {
+export default function LeadTaskPanel({ lead, task: initialTask, onChanged, onClose, showToast, hideCheckin, initialView }) {
     const nav = useNavigate()
     const { user } = useAuth()
     const ordering = canOrder(user) // Sales Dealmaker tidak membuat order
     const delegating = canDelegate(user)
-    const [view, setView] = useState('main')
+    const [view, setView] = useState(initialView || 'main')
     const [task, setTask] = useState(initialTask || null)
     const [dueDate, setDueDate] = useState(initialTask?.due_date || '')
     const [remark, setRemark] = useState(initialTask?.remark || '')
@@ -477,12 +482,28 @@ function ConcludeForm({ lead, task, onBack, onDone, showToast }) {
     )
 }
 
-// =====================================================================================
+// Aturan Brand Awareness (dokumen hal. 26): Conclusion hanya Next atau Lose, tanpa Win.
+const BRAND_CONFIG = {
+    conclusions: ['NEXT', 'LOSE'],
+    reasons: {
+        NEXT: [{ value: 'TRTK', label: 'TRTK — Tertarik' }],
+        LOSE: [
+            { value: 'TDKTRTK', label: 'TDKTRTK — Tidak Tertarik' },
+            { value: 'NOCNTC', label: 'NOCNTC — Prospek Tidak Bisa Dihubungi' },
+            { value: 'TKTTP', label: 'TKTTP — Toko Tutup Permanen' },
+        ],
+    },
+    statuses: ['Process', 'WaitCust', 'Hold'],
+    defaultStatus: 'Process',
+    defaultNextCode: 'VRFKSNOO',
+    reasonHint:
+        'Reason Code = TRTK (Tertarik) when moving forward. Lose options at this step: TDKTRTK (Tidak Tertarik), NOCNTC (Prospek Tidak Bisa Dihubungi), TKTTP (Toko Tutup Permanen) — no Win here, Win is only set at Quote Result (QRSLT).',
+}
 
 function BrandForm({ lead, task, onBack, onDone, showToast }) {
     const [busy, setBusy] = useState(false)
-    const [comment, setComment] = useState(task?.remark || '')
-    const fields = useConclusionFields(lead.task_set_id, task?.seq, task?.is_closing)
+    const [contact, setContact] = useState(lead.owner_name || '')
+    const tc = useTaskCompletion(task, lead, BRAND_CONFIG)
 
     const submit = async (e) => {
         e.preventDefault()
@@ -490,19 +511,26 @@ function BrandForm({ lead, task, onBack, onDone, showToast }) {
             showToast('Tidak ada tugas aktif untuk diselesaikan', { warn: true })
             return
         }
-        if (!fields.valid()) {
+        if (!tc.valid()) {
             showToast('Pilih tugas berikutnya', { warn: true })
             return
         }
         setBusy(true)
         try {
-            const res = await concludeLeadTask(task.id, { ...fields.toPayload(), remark: comment.trim() || null })
+            if (contact.trim() !== (lead.owner_name || '')) {
+                await updateLead(lead.id, { owner_name: contact.trim() || null })
+            }
+            if (!tc.complete) {
+                await updateLeadTask(task.id, { remark: tc.comment.trim() || null })
+                showToast('Comment tersimpan')
+                onDone?.()
+                return
+            }
+            const res = await concludeLeadTask(task.id, tc.toPayload())
             showToast(
-                fields.conclusion === 'NEXT'
+                tc.conclusion === 'NEXT'
                     ? `Brand Awareness selesai · berikutnya: ${res?.next_task?.name || '—'}`
-                    : fields.conclusion === 'WIN'
-                        ? 'Prospek ditandai MENANG 🏆'
-                        : 'Prospek ditandai KALAH',
+                    : 'Prospek ditandai KALAH',
             )
             // Panel ditutup & data dimuat ulang begitu tugas selesai, supaya tidak menampilkan
             // tugas lama yang sudah basi.
@@ -517,15 +545,16 @@ function BrandForm({ lead, task, onBack, onDone, showToast }) {
     return (
         <form onSubmit={submit}>
             <BackLink onClick={onBack} />
-            <div style={{ fontWeight: 800, marginBottom: 2 }}>Form Brand</div>
-            <div className="muted" style={{ fontSize: 11.5, marginBottom: 8 }}>
-                {lead.business_name}
+            <TaskHeader task={task} lead={lead} />
+            <div className="th">
+                <div className="tc-h">Visit Notes</div>
+                <Field label="Contact Person" style={{ margin: 0 }}>
+                    <input value={contact} onChange={(e) => setContact(e.target.value)} />
+                </Field>
             </div>
-            <TaskFieldsGrid task={task} comment={comment} onCommentChange={setComment} style={{ marginBottom: 12 }} />
-            <div className="section-h" style={{ marginTop: 4 }}>Selesaikan Tugas</div>
-            <ConclusionFields isClosing={task?.is_closing} fields={fields} />
-            <button className="btn" type="submit" disabled={busy}>
-                {busy ? 'Menyimpan…' : 'Simpan'}
+            <TaskCompletion tc={tc} />
+            <button className="btn ok" type="submit" disabled={busy}>
+                {busy ? 'Menyimpan…' : 'Save'}
             </button>
         </form>
     )

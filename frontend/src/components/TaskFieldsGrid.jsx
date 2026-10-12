@@ -5,7 +5,7 @@ import { STAGE_LABEL } from '../lib/format'
 import { Field } from './Field'
 import { TASK_STATUS_LABEL } from './TaskFields'
 
-const READONLY_STYLE = { background: '#E9EEF6', cursor: 'default' }
+const READONLY_STYLE = { background: 'var(--readonly)', cursor: 'default' }
 
 export function TaskFieldsGrid({ task, comment, onCommentChange, commentLabel = 'Comment', style }) {
   if (!task) return null

@@ -14,9 +14,9 @@ class LeadTask extends Model
     public const DONE = 'DONE';
 
     protected $fillable = [
-        'lead_id', 'task_template_id', 'seq', 'name', 'task_type', 'stage', 'pipeline_step',
+        'lead_id', 'task_template_id', 'seq', 'code', 'name', 'task_type', 'stage', 'pipeline_step',
         'is_closing', 'mandatory', 'actions', 'assigned_to', 'due_date', 'status',
-        'pct_complete', 'conclusion', 'reason_code', 'remark', 'completed_at',
+        'pct_complete', 'conclusion', 'reason_code', 'task_status', 'remark', 'completed_at',
     ];
 
     protected function casts(): array
@@ -29,6 +29,24 @@ class LeadTask extends Model
             'completed_at' => 'datetime',
             'pct_complete' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // Task ID (BRANDAW, VRFKSNOO, ...) disalin dari template saat tugas dibuat.
+        static::creating(function (LeadTask $task) {
+            if (! $task->task_template_id) {
+                return;
+            }
+            if (! $task->code) {
+                $task->code = TaskTemplate::whereKey($task->task_template_id)->value('code');
+            }
+            // Pemberian Sample bernomor: GIVESMPL1, GIVESMPL2, ... menurut urutan tugas sampling milik lead yang sama.
+            if ($task->code && str_starts_with($task->code, 'GIVESMPL')) {
+                $count = static::where('lead_id', $task->lead_id)->where('pipeline_step', 'sampling')->count();
+                $task->code = 'GIVESMPL'.($count + 1);
+            }
+        });
     }
 
     public function lead(): BelongsTo
