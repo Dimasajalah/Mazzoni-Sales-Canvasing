@@ -50,6 +50,7 @@ import Expenses from './pages/Expenses'
 import NewExpense from './pages/NewExpense'
 import Returns from './pages/Returns'
 import NewReturn from './pages/NewReturn'
+import Notifications from './pages/Notifications'
 
 function Protected({ children }) {
   const { isAuthenticated, booting } = useAuth()
@@ -104,6 +105,7 @@ function AppRoutes() {
           <Route path="/quotes/:id/lines/add" element={<Protected><QuoteAddLine /></Protected>} />
           <Route path="/visit/:id/promo" element={<Protected><StorePromo /></Protected>} />
           <Route path="/visit/:id/order" element={<Protected><OrderCheckout /></Protected>} />
+          <Route path="/notifications" element={<Protected><Notifications /></Protected>} />
           <Route path="/quotes/:id/lines/new" element={<Protected><QuoteLineDetail /></Protected>} />
           <Route path="/quotes/:id/lines/:lineId" element={<Protected><QuoteLineDetail /></Protected>} />
           <Route path="/stock" element={<Protected><Stock /></Protected>} />

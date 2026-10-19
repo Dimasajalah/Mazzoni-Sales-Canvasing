@@ -1,0 +1,13 @@
+/* Pemberitahuan uang muka (Petty Cash tahap 2) */
+.nt-list{ display:flex; flex-direction:column; gap:10px; padding:14px 16px 24px; }
+.nt-readall{ align-self:flex-end; padding:6px 12px; border:1px solid #E1DAC9; border-radius:999px; background:#FFFFFF; color:var(--text); font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
+.nt-card{ display:flex; gap:12px; align-items:flex-start; width:100%; padding:14px; border:1px solid #ECE5D8; border-radius:16px; background:#FFFFFF; text-align:left; font:inherit; cursor:pointer; }
+.nt-card.new{ border-color:#BFE3CE; background:#F5FBF7; }
+.nt-dot{ flex:none; width:10px; height:10px; margin-top:5px; border-radius:50%; background:transparent; }
+.nt-card.new .nt-dot{ background:#1F8A4C; }
+.nt-body{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.nt-title{ font-size:12px; font-weight:800; color:var(--mut); }
+.nt-amount{ font-size:20px; font-weight:800; color:var(--text); line-height:1.2; }
+.nt-sub{ font-size:11.5px; line-height:1.4; color:var(--faint); }
+.nt-bell{ position:relative; display:grid; place-items:center; width:40px; height:40px; border:0; border-radius:12px; background:transparent; color:inherit; cursor:pointer; }
+.nt-badge{ position:absolute; top:3px; right:3px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:#D3293C; color:#FFFFFF; font-size:10px; font-weight:800; line-height:17px; text-align:center; }

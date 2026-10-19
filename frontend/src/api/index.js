@@ -167,6 +167,10 @@ export const applyLeadPromo = (leadId, payload) => apiPost(`/leads/${leadId}/pro
 
 export const removeLeadPromo = (leadId, promoRef) => apiPost(`/leads/${leadId}/promos/remove`, { promo_ref: promoRef }).then(unwrap)
 
+export const getCashAdvanceNotifications = () => apiGet('/cash-advance/notifications').then(unwrap)
+export const markCashAdvanceRead = (id) => apiPost(`/cash-advance/notifications/${id}/read`, {}).then(unwrap)
+export const markAllCashAdvanceRead = () => apiPost('/cash-advance/notifications/read-all', {}).then(unwrap)
+
 export const bindQuotePart = (quoteId, lineId, productId) => apiPost(`/quotes/${quoteId}/lines/${lineId}/bind-part`, { product_id: productId }).then(unwrap)
 
 export const confirmQuoteOrder = (quoteId, payload) => apiPost(`/quotes/${quoteId}/checkout`, payload).then(unwrap)

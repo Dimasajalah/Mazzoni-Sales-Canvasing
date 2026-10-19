@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\V1\VisitController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\ProductSampleController;
+use App\Http\Controllers\Api\V1\CashAdvanceNotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', [HealthController::class, 'health']);
@@ -70,6 +71,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/discount-strata', [DiscountStrataController::class, 'store']);
         Route::patch('/discount-strata/{id}', [DiscountStrataController::class, 'update']);
         Route::delete('/discount-strata/{id}', [DiscountStrataController::class, 'destroy']);
+
+        Route::get('/cash-advance/notifications', [CashAdvanceNotificationController::class, 'index']);
+        Route::post('/cash-advance/notifications/read-all', [CashAdvanceNotificationController::class, 'readAll']);
+        Route::post('/cash-advance/notifications/{id}/read', [CashAdvanceNotificationController::class, 'read']);
 
         Route::get('/code-mappings', [CodeMappingController::class, 'index']);
         Route::post('/code-mappings', [CodeMappingController::class, 'store']);

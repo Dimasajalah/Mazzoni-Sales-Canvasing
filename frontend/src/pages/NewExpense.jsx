@@ -1,3 +1,4 @@
+//frontend/src/pages/NewExpense.jsx
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createExpense, getCustomers } from '../api'

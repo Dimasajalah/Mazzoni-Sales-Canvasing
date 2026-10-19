@@ -18,6 +18,11 @@ class StagingARProvider implements ARDataProviderInterface
             $query->where('customer_id', $filters['customer_id']);
         }
 
+        // Pembatas per sales: hanya invoice milik customer yang dipegang sales itu.
+        if (! empty($filters['salesperson_id'])) {
+            $query->whereHas('customer', fn ($q) => $q->where('salesperson_id', $filters['salesperson_id']));
+        }
+
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }

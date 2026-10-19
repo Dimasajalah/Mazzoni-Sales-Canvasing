@@ -1,9 +1,11 @@
 <?php
-
+//backend/app/Http/Controllers/Api/V1/ARController.php
 namespace App\Http\Controllers\Api\V1;
 
+use App\Helpers\Aging;
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Models\Invoice;
 use App\Services\ARService;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
@@ -20,10 +22,14 @@ class ARController extends Controller
 
     public function aging(Request $request): JsonResponse
     {
-        $customerId = $request->filled('customer_id') ? (int) $request->get('customer_id') : null;
         $bucket = $request->get('bucket');
 
-        return ApiResponse::success($this->arService->aging($customerId, $bucket));
+        // Satu customer: perilaku lama. Tanpa customer_id: laporan piutang milik pengguna (sales hanya customer miliknya).
+        if ($request->filled('customer_id')) {
+            return ApiResponse::success($this->arService->aging((int) $request->get('customer_id'), $bucket));
+        }
+
+        return ApiResponse::success($this->arService->portfolio($request->user(), $bucket));
     }
 
     public function customerAging(int $id): JsonResponse
@@ -33,16 +39,24 @@ class ARController extends Controller
 
     public function invoices(Request $request): JsonResponse
     {
+        $filters = $request->only(['customer_id', 'status', 'q']);
+        if ($request->user()->role === 'sales') {
+            $filters['salesperson_id'] = $request->user()->id;
+        }
+
         return ApiResponse::success(
-            $this->arService->invoices($request->only(['customer_id', 'status', 'q']), (int) $request->get('per_page', 20))
+            $this->arService->invoices($filters, (int) $request->get('per_page', 20))
         );
     }
 
-    public function showInvoice(int $id): JsonResponse
+    public function showInvoice(Request $request, int $id): JsonResponse
     {
         $invoice = $this->arService->findInvoice($id);
         if (! $invoice) {
             return ApiResponse::error('Invoice tidak ditemukan', null, 404);
+        }
+        if (! Aging::canAccess($invoice, $request->user())) {
+            return ApiResponse::error('Invoice ini bukan milik customer Anda', null, 403);
         }
 
         return ApiResponse::success($invoice);
@@ -66,6 +80,11 @@ class ARController extends Controller
             'payment_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        // Sales hanya boleh mencatat pembayaran untuk invoice customer miliknya.
+        if (! Aging::canAccess(Invoice::with('customer')->find($data['invoice_id']), $request->user())) {
+            return ApiResponse::error('Invoice ini bukan milik customer Anda', null, 403);
+        }
 
         try {
             $payment = $this->paymentService->create($data, $request->user());

@@ -45,7 +45,7 @@ class VisitController extends Controller
             'latitude' => ['required', 'numeric'],
             'longitude' => ['required', 'numeric'],
             'accuracy' => ['nullable', 'numeric'],
-            'photo' => ['nullable', 'file', 'image', 'max:5120', 'mimes:jpg,jpeg,png,webp'],
+            'photo' => ['nullable', 'file', 'image', 'max:10240', 'mimes:jpg,jpeg,png,webp'],
         ]);
 
         if (! empty($data['customer_id']) && ! empty($data['lead_id'])) {

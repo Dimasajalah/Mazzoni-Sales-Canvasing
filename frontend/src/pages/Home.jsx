@@ -10,6 +10,8 @@ import { useDraftSync } from '../hooks/useDraftSync'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { daysFromToday, fmtRp, initials, listOf, statusCustomerMeta } from '../lib/format'
 import { useUi } from '../context/UiContext'
+import NotificationBell from '../components/NotificationBell'
+import { useUnreadNotifications } from '../hooks/useUnreadNotifications'
 
 // Enam batang sesuai dokumen hal. 8 (tanpa Lead dan Distribution)
 const PIPE_VIEW = [
@@ -31,6 +33,7 @@ export default function Home() {
   useDraftSync()
   const bannerRef = useDragScroll()
   const fyRef = useDragScroll()
+  const { unread } = useUnreadNotifications(true)
 
   useEffect(() => {
     let alive = true
@@ -153,12 +156,12 @@ export default function Home() {
             type="button"
             className="bell"
             aria-label="Notifications"
-            onClick={() => showToast('Belum tersedia', { warn: true })}
+            onClick={() => nav('/notifications')}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8M10 21h4" />
             </svg>
-            {notif > 0 ? <span className="bdot" /> : null}
+            {unread > 0 || notif > 0 ? <span className="bdot" /> : null}
           </button>
         </div>
         <div style={{ marginTop: 12 }}>

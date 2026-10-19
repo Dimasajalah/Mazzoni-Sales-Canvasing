@@ -2,6 +2,7 @@
 //backend/app/Services/DashboardService.php
 namespace App\Services;
 
+use App\Helpers\Aging;
 use App\Models\Customer;
 use App\Models\Expense;
 use App\Models\Lead;
@@ -23,8 +24,9 @@ class DashboardService
 
     public function summary(User $user): array
     {
-        $aging = $this->arProvider->agingSummary();
-        $agingInvoices = $this->arProvider->agingInvoices();
+        // Piutang hanya milik customer sales ini (supervisor dan admin melihat semuanya)
+        $agingInvoices = Aging::visibleTo($this->arProvider->agingInvoices(), $user);
+        $aging = Aging::summarize($agingInvoices);
         $topAging = $agingInvoices->take(10)->values();
 
         // Top 10 Outstanding: total saldo terbuka per customer + invoice tertuanya
@@ -74,7 +76,7 @@ class DashboardService
                     ->count(),
             ],
             'ar' => $aging,
-            'top_aging' => $topAging,
+            'top_aging' => $topAging->map(fn ($i) => Aging::payload($i))->values(),
             'top_outstanding' => $topOutstanding,
             'pipeline' => $pipeline,
             'activities' => $this->leadTaskService->summary($user),
