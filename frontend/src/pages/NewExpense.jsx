@@ -59,7 +59,7 @@ export default function NewExpense() {
 
     const fd = new FormData()
     Object.entries(formFields).forEach(([k, v]) => fd.append(k, v))
-    photos.forEach((f, i) => fd.append('photos[]', f, f.name || `photo-${i}.jpg`))
+    photos.forEach((f, i) => fd.append('attachments[]', f, f.name || `photo-${i}.jpg`))
 
     setSaving(true)
     try {

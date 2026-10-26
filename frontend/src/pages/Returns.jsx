@@ -1,3 +1,4 @@
+//frontend/src/pages/Returns.jsx
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getReturns } from '../api'
@@ -61,23 +62,35 @@ export default function Returns() {
         const line = r.lines?.[0]
         const [lbl, col] = ST[r.status] || [r.status, 'var(--mut)']
         return (
-          <Card key={r.id} className="li" style={{ padding: 13, marginBottom: 9 }}>
-            <div className="barL" style={{ background: col }} />
-            <div className="main">
-              <div className="n" style={{ fontSize: 13 }}>{line?.product?.description || r.return_number}</div>
-              <div className="d">
-                {line?.product?.part_num} · {line?.qty} · {r.customer?.name}
+          // pembungkus yang bisa diketuk: membuka detail retur (foto, riwayat, dan aksi untuk peran berwenang)
+          <div
+            key={r.id}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: 'pointer' }}
+            onClick={() => nav(`/returns/${r.id}`)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') nav(`/returns/${r.id}`)
+            }}
+          >
+            <Card className="li" style={{ padding: 13, marginBottom: 9 }}>
+              <div className="barL" style={{ background: col }} />
+              <div className="main">
+                <div className="n" style={{ fontSize: 13 }}>{line?.product?.description || r.return_number}</div>
+                <div className="d">
+                  {line?.product?.part_num} · {line?.qty} · {r.customer?.name}
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
+                  <span className="badge" style={{ background: `${col}22`, color: col }}>{lbl}</span>
+                  {r.rma_number ? (
+                    <span className="badge" style={{ background: 'var(--green-soft)', color: 'var(--green-ink)' }}>
+                      {r.rma_number}
+                    </span>
+                  ) : null}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
-                <span className="badge" style={{ background: `${col}22`, color: col }}>{lbl}</span>
-                {r.rma_number ? (
-                  <span className="badge" style={{ background: 'var(--green-soft)', color: 'var(--green-ink)' }}>
-                    {r.rma_number}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         )
       })}
       {!loading && !rows.length ? <Card className="muted" style={{ textAlign: 'center' }}>Belum ada retur.</Card> : null}

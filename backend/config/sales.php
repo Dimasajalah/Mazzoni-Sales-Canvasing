@@ -1,5 +1,5 @@
 <?php
-
+//backend/config/sales.php
 return [
     'visit_radius_meters' => (int) env('VISIT_RADIUS_METERS', 500),
     'data_source' => env('DATA_SOURCE', 'staging'),

@@ -1,5 +1,5 @@
 <?php
-
+//backend/app/Services/ReturnService.php
 namespace App\Services;
 
 use App\Models\ReturnAttachment;
@@ -11,6 +11,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ReturnService
 {
@@ -89,27 +90,38 @@ class ReturnService
         });
     }
 
+    /** Status hanya boleh berpindah sesuai urutan di config/access.php; baris dikunci supaya dua permintaan bersamaan tidak saling menimpa. */
     public function updateStatus(ReturnRequest $return, string $status, User $user, ?string $notes = null): ReturnRequest
     {
         return DB::transaction(function () use ($return, $status, $user, $notes) {
-            $from = $return->status;
+            $locked = ReturnRequest::whereKey($return->id)->lockForUpdate()->firstOrFail();
+            $from = $locked->status;
+
+            if (! app(AccessPolicy::class)->returnTransitionAllowed($from, $status)) {
+                throw ValidationException::withMessages([
+                    'status' => "Status retur tidak dapat diubah dari {$from} ke {$status}.",
+                ]);
+            }
+
             $payload = ['status' => $status];
 
-            if (in_array($status, ['APPROVED', 'RMA_ISSUED'], true) && ! $return->rma_number) {
+            if (in_array($status, ['APPROVED', 'RMA_ISSUED'], true) && ! $locked->rma_number) {
                 $payload['rma_number'] = $this->nextRmaNumber();
             }
 
-            $return->update($payload);
+            $locked->update($payload);
 
             ReturnStatusHistory::create([
-                'return_request_id' => $return->id,
+                'return_request_id' => $locked->id,
                 'user_id' => $user->id,
                 'from_status' => $from,
                 'to_status' => $status,
                 'notes' => $notes,
             ]);
 
-            return $return->fresh(['customer', 'salesperson', 'lines.product', 'attachments', 'statusHistories']);
+            $this->auditLogService->log($user->id, 'return.status', ReturnRequest::class, $locked->id, ['status' => $from], ['status' => $status, 'rma_number' => $locked->rma_number]);
+
+            return $locked->fresh(['customer', 'salesperson', 'lines.product', 'attachments', 'statusHistories']);
         });
     }
 
@@ -126,11 +138,12 @@ class ReturnService
         ]);
     }
 
+    /** Dipanggil di dalam transaksi pembuatan retur; baris terakhir dikunci sampai transaksi selesai. */
     protected function nextReturnNumber(): string
     {
         $year = now()->format('Y');
         $prefix = "RET-STG-{$year}-";
-        $last = ReturnRequest::where('return_number', 'like', $prefix.'%')->orderByDesc('return_number')->value('return_number');
+        $last = ReturnRequest::where('return_number', 'like', $prefix.'%')->lockForUpdate()->orderByDesc('return_number')->value('return_number');
         $seq = 1;
         if ($last && preg_match('/(\d+)$/', $last, $m)) {
             $seq = ((int) $m[1]) + 1;
@@ -139,11 +152,12 @@ class ReturnService
         return $prefix . str_pad((string) $seq, 6, '0', STR_PAD_LEFT);
     }
 
+    /** Dipanggil di dalam transaksi perubahan status. */
     public function nextRmaNumber(): string
     {
         $year = now()->format('Y');
         $prefix = "RMA-STG-{$year}-";
-        $last = ReturnRequest::where('rma_number', 'like', $prefix.'%')->orderByDesc('rma_number')->value('rma_number');
+        $last = ReturnRequest::where('rma_number', 'like', $prefix.'%')->lockForUpdate()->orderByDesc('rma_number')->value('rma_number');
         $seq = 1;
         if ($last && preg_match('/(\d+)$/', $last, $m)) {
             $seq = ((int) $m[1]) + 1;

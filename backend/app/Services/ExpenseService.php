@@ -11,6 +11,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ExpenseService
 {
@@ -82,20 +83,33 @@ class ExpenseService
         });
     }
 
+    /** Status hanya boleh berpindah sesuai urutan di config/access.php; baris dikunci supaya dua permintaan bersamaan tidak saling menimpa. */
     public function updateStatus(Expense $expense, string $status, User $user, ?string $notes = null): Expense
     {
-        $from = $expense->status;
-        $expense->update(['status' => $status]);
+        return DB::transaction(function () use ($expense, $status, $user, $notes) {
+            $locked = Expense::whereKey($expense->id)->lockForUpdate()->firstOrFail();
+            $from = $locked->status;
 
-        ExpenseStatusHistory::create([
-            'expense_id' => $expense->id,
-            'user_id' => $user->id,
-            'from_status' => $from,
-            'to_status' => $status,
-            'notes' => $notes,
-        ]);
+            if (! app(AccessPolicy::class)->expenseTransitionAllowed($from, $status)) {
+                throw ValidationException::withMessages([
+                    'status' => "Status expense tidak dapat diubah dari {$from} ke {$status}.",
+                ]);
+            }
 
-        return $expense->fresh(['salesperson', 'customer', 'attachments', 'statusHistories']);
+            $locked->update(['status' => $status]);
+
+            ExpenseStatusHistory::create([
+                'expense_id' => $locked->id,
+                'user_id' => $user->id,
+                'from_status' => $from,
+                'to_status' => $status,
+                'notes' => $notes,
+            ]);
+
+            $this->auditLogService->log($user->id, 'expense.status', Expense::class, $locked->id, ['status' => $from], ['status' => $status]);
+
+            return $locked->fresh(['salesperson', 'customer', 'attachments', 'statusHistories']);
+        });
     }
 
     protected function storeAttachment(Expense $expense, UploadedFile $file): ExpenseAttachment
@@ -111,11 +125,12 @@ class ExpenseService
         ]);
     }
 
+    /** Dipanggil di dalam transaksi pembuatan expense; baris terakhir dikunci sampai transaksi selesai. */
     protected function nextExpenseNumber(): string
     {
         $year = now()->format('Y');
         $prefix = "EXP-STG-{$year}-";
-        $last = Expense::where('expense_number', 'like', $prefix.'%')->orderByDesc('expense_number')->value('expense_number');
+        $last = Expense::where('expense_number', 'like', $prefix.'%')->lockForUpdate()->orderByDesc('expense_number')->value('expense_number');
         $seq = 1;
         if ($last && preg_match('/(\d+)$/', $last, $m)) {
             $seq = ((int) $m[1]) + 1;

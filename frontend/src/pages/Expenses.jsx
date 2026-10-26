@@ -25,7 +25,7 @@ export default function Expenses() {
   const [filter, setFilter] = useState('ALL')
   const [items, setItems] = useState([])
   const nav = useNavigate()
-  const { showToast, openSheet } = useUi()
+  const { showToast } = useUi()
 
   useEffect(() => {
     const params = filter === 'ALL' || filter === 'UNPAID' ? {} : { status: filter }
@@ -35,7 +35,8 @@ export default function Expenses() {
   }, [filter, showToast])
 
   const filtered = items.filter((e) => {
-    if (filter === 'UNPAID') return (e.status === 'APPROVED' || e.approval === 1) && !e.paid
+    // Belum dibayar = sudah disetujui dan statusnya belum PAID (status adalah satu-satunya sumber kebenaran)
+    if (filter === 'UNPAID') return e.status === 'APPROVED'
     return true
   })
 
@@ -47,11 +48,11 @@ export default function Expenses() {
       </button>
       <Chips options={FILTERS} value={filter} onChange={setFilter} />
       {filtered.map((e) => {
-        const st = e.status || statusLabel(e.approval)
+        const st = e.status || 'SUBMITTED'
         const col =
-          st === 'APPROVED' || e.approval === 1
+          st === 'APPROVED' || st === 'PAID'
             ? 'var(--green)'
-            : st === 'REJECTED' || e.approval === -1
+            : st === 'REJECTED'
               ? 'var(--pink)'
               : 'var(--amber)'
         return (
@@ -62,29 +63,10 @@ export default function Expenses() {
             title={e.expense_number || e.id}
             subtitle={`${e.category} · ${st}${e.note ? ` · ${e.note}` : ''}`}
             right={fmtRp(e.amount)}
-            onClick={() =>
-              openSheet('Detail Expense', (
-                <div>
-                  <div style={{ fontWeight: 800 }}>{e.expense_number}</div>
-                  <p className="muted" style={{ fontSize: 12 }}>
-                    {e.note}
-                  </p>
-                  <div>{fmtRp(e.amount)}</div>
-                  <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>
-                    Status: {st}
-                  </div>
-                </div>
-              ))
-            }
+            onClick={() => nav(`/expenses/${e.id}`)}
           />
         )
       })}
     </Screen>
   )
-}
-
-function statusLabel(a) {
-  if (a === 1) return 'APPROVED'
-  if (a === -1) return 'REJECTED'
-  return 'SUBMITTED'
 }

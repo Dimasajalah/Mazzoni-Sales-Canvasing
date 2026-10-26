@@ -1,0 +1,80 @@
+/* Dashboard Cash Advance, detail kategori, dan form Catat Pengeluaran (FDD Sales Mobile - Cash Advance v1.0) */
+.topbar-actions{ display:flex; align-items:center; gap:4px; margin-left:auto; }
+.topbar-actions button{ display:grid; place-items:center; width:36px; height:36px; border:0; border-radius:10px; background:transparent; color:inherit; font-size:16px; cursor:pointer; }
+
+.ca-balance-card{ margin:14px 16px 0; padding:16px; border-radius:16px; background:linear-gradient(135deg,#1E3A8A,#1D4ED8); color:#FFFFFF; }
+.ca-balance-card>span{ font-size:12px; opacity:.85; }
+.ca-balance-card>h2{ margin:4px 0 12px; font-size:26px; font-weight:800; }
+.ca-balance-row{ display:flex; gap:10px; }
+.ca-balance-row>div{ flex:1; padding:8px 10px; border-radius:12px; background:rgba(255,255,255,.14); font-size:11px; }
+.ca-balance-row strong{ display:block; font-size:14px; margin-top:2px; }
+.ca-neg{ color:#FCA5A5; }
+.ca-pos{ color:#86EFAC; }
+
+.ca-tabs{ display:flex; margin:14px 16px 0; padding:4px; border-radius:999px; background:#EFEAE0; }
+.ca-tabs button{ flex:1; padding:8px 0; border:0; border-radius:999px; background:transparent; font:inherit; font-weight:700; font-size:13px; color:var(--mut); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ca-tabs button.active{ background:#FFFFFF; color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+.ca-badge{ min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:#D3293C; color:#FFFFFF; font-size:10px; font-weight:800; line-height:17px; text-align:center; }
+
+.ca-month{ display:block; width:calc(100% - 32px); margin:12px 16px 0; padding:10px 12px; border:1px solid #E1DAC9; border-radius:12px; background:#FFFFFF; font:inherit; font-size:13px; color:var(--text); }
+
+.ca-category-list{ display:flex; flex-direction:column; gap:8px; padding:12px 16px 90px; }
+.ca-category-row{ display:flex; align-items:center; gap:12px; width:100%; padding:12px; border:1px solid #ECE5D8; border-radius:14px; background:#FFFFFF; text-align:left; font:inherit; cursor:pointer; }
+.ca-icon{ flex:none; width:36px; height:36px; display:grid; place-items:center; border-radius:10px; background:var(--primary-soft); font-size:18px; }
+.ca-category-info{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.ca-category-info strong{ font-size:13.5px; }
+.ca-category-info small{ font-size:11.5px; color:var(--faint); }
+.ca-amount-neg{ color:#C2410C; font-weight:800; font-size:13px; }
+.ca-amount-pos{ color:#1F8A4C; font-weight:800; font-size:13px; }
+.ca-amount-muted{ color:var(--faint); font-weight:700; font-size:13px; }
+
+.ca-doc-list{ display:flex; flex-direction:column; gap:8px; padding:12px 16px 90px; }
+.ca-doc-row{ display:grid; grid-template-columns:72px 1fr auto; align-items:center; gap:8px; padding:12px; border:1px solid #ECE5D8; border-radius:14px; background:#FFFFFF; font-size:12.5px; }
+.ca-doc-row strong{ display:block; font-size:13px; }
+.ca-legal{ display:block; color:#1F8A4C; font-size:11px; margin-top:2px; }
+
+.ca-category-total-card{ margin:14px 16px 0; padding:16px; border-radius:16px; background:#FFFFFF; border:1px solid #ECE5D8; display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+.ca-category-total-card>span:first-child{ font-size:12px; color:var(--mut); }
+.ca-category-total-card>strong{ font-size:22px; }
+.ca-count-badge{ margin-top:4px; padding:2px 8px; border-radius:999px; background:#EFEAE0; font-size:11px; font-weight:700; }
+
+.ca-fab-save{ position:fixed; left:16px; right:16px; bottom:76px; padding:14px; border:0; border-radius:14px; background:#EA580C; color:#FFFFFF; font:inherit; font-weight:800; font-size:14px; cursor:pointer; box-shadow:0 6px 16px rgba(234,88,12,.35); }
+
+.ca-form{ padding:14px 16px 100px; display:flex; flex-direction:column; gap:14px; }
+.ca-field label{ display:block; font-size:12px; font-weight:700; color:var(--mut); margin-bottom:6px; }
+.ca-badge-auto{ padding:1px 6px; border-radius:999px; background:#EFEAE0; font-size:10px; font-weight:700; color:var(--mut); }
+.ca-hint{ color:#1F8A4C; font-size:11px; font-weight:700; }
+.ca-field select, .ca-field textarea, .ca-field input[type="text"]{ width:100%; padding:11px 12px; border:1px solid #E1DAC9; border-radius:12px; background:#FFFFFF; font:inherit; font-size:14px; color:var(--text); }
+.ca-field textarea{ resize:vertical; }
+.ca-amount-input{ display:flex; align-items:center; gap:6px; padding:11px 12px; border:1px solid #E1DAC9; border-radius:12px; background:#FFFFFF; }
+.ca-amount-input span{ color:var(--mut); font-weight:700; }
+.ca-amount-input input{ flex:1; border:0; outline:0; font:inherit; font-size:15px; font-weight:700; }
+
+.ca-customer-chip{ display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid #ECE5D8; border-radius:12px; background:#FBF7EE; }
+.ca-customer-chip>span:first-child{ flex:none; width:30px; height:30px; display:grid; place-items:center; border-radius:999px; background:#FBCFE8; color:#9D174D; font-weight:800; font-size:12px; }
+.ca-customer-chip div{ flex:1; min-width:0; }
+.ca-customer-chip strong{ display:block; font-size:13px; }
+.ca-customer-chip small{ color:var(--faint); font-size:11px; }
+.ca-customer-chip button{ border:0; background:transparent; font-size:16px; color:var(--mut); cursor:pointer; }
+
+.ca-photos{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+.ca-photo-thumb{ position:relative; width:64px; height:64px; border-radius:10px; overflow:hidden; border:1px solid #E1DAC9; }
+.ca-photo-thumb img{ width:100%; height:100%; object-fit:cover; }
+.ca-photo-thumb button{ position:absolute; top:2px; right:2px; width:18px; height:18px; border:0; border-radius:50%; background:rgba(0,0,0,.6); color:#FFFFFF; font-size:11px; line-height:18px; cursor:pointer; }
+.ca-btn-outline{ width:100%; margin-top:6px; padding:10px; border:1px dashed #C9BFA8; border-radius:12px; background:#FFFFFF; font:inherit; font-size:13px; font-weight:700; color:var(--text); cursor:pointer; }
+
+.ca-btn-primary{ width:100%; padding:14px; border:0; border-radius:14px; background:#1D4ED8; color:#FFFFFF; font:inherit; font-weight:800; font-size:15px; cursor:pointer; }
+.ca-btn-primary:disabled{ opacity:.6; }
+.ca-error-text{ margin:4px 0 0; color:#C2293C; font-size:11.5px; font-weight:600; }
+.ca-balance-hint{ text-align:center; font-size:12px; color:var(--mut); }
+.ca-balance-hint strong{ color:#C2410C; }
+
+.ca-dialog-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:grid; place-items:center; z-index:50; }
+.ca-dialog{ width:min(300px,85vw); padding:20px; border-radius:16px; background:#FFFFFF; text-align:center; }
+.ca-dialog p{ margin:0 0 14px; font-size:14px; font-weight:600; }
+.ca-dialog button{ width:100%; margin-top:8px; padding:11px; border:0; border-radius:12px; font:inherit; font-weight:700; cursor:pointer; }
+.ca-dialog button:first-of-type{ background:#EFEAE0; color:var(--text); }
+.ca-dialog button:last-of-type{ background:#D3293C; color:#FFFFFF; }
+
+.ca-retry-panel{ padding:16px; display:flex; flex-direction:column; gap:14px; }
+.ca-retry-title{ margin:0; padding:14px; border-radius:14px; background:#FEF3C7; color:#92400E; font-size:13.5px; font-weight:600; }

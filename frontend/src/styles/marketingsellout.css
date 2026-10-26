@@ -1,0 +1,18 @@
+/* Data Sell Out (Blueprint MJU 3.2.7) — marketingsellout.css */
+.sl-cols{ margin:8px 0 0; padding:0; list-style:none; }
+.sl-cols li{ display:flex; gap:8px; padding:4px 0; font-size:12px; color:var(--faint, #7A8494); }
+.sl-cols code{ flex:none; min-width:108px; font-size:11.5px; font-weight:800; color:var(--text, #17202B); }
+.sl-actions{ display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.sl-file{ padding:10px 12px; border:1px dashed var(--stroke, #E6E0D2); border-radius:12px; font-size:12.5px; color:var(--faint, #7A8494); word-break:break-all; }
+.sl-file.has{ color:var(--text, #17202B); border-style:solid; }
+.sl-alert{ margin-top:12px; padding:12px; border-radius:12px; font-size:12.5px; line-height:1.5; }
+.sl-alert.bad{ background:#FDE8EC; color:var(--pink, #A81B30); }
+.sl-alert.ok{ background:var(--green-soft, #E3F4EA); color:var(--green, #1B7F46); }
+.sl-alert b{ display:block; margin-bottom:2px; font-size:13px; }
+.sl-errors{ margin:10px 0 0; padding:0; list-style:none; max-height:320px; overflow-y:auto; }
+.sl-errors li{ padding:7px 0; border-top:1px solid rgba(168,27,48,.18); font-size:12px; }
+.sl-errors li:first-child{ border-top:none; }
+.sl-errors b{ display:inline; font-size:12px; }
+.sl-errors small{ display:block; color:var(--faint, #7A8494); }
+.sl-hist{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:7px 0; border-top:1px solid var(--stroke, #E6E0D2); font-size:12px; }
+.sl-hist span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

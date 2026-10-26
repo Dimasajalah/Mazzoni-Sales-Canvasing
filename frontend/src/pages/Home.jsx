@@ -1,9 +1,9 @@
 //frontend/src/pages/Home.jsx
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getDashboard } from '../api'
-import { GlobalSearch } from '../components/GlobalSearch'
-import { AgingBuckets, Card, ListItem, Screen } from '../components/ui'
+import { Card, ListItem, Screen } from '../components/ui'
+import { Sidebar } from '../components/Sidebar'
 import { useAuth } from '../context/AuthContext'
 import { canOrder, isManager } from '../lib/roles'
 import { useDraftSync } from '../hooks/useDraftSync'
@@ -12,15 +12,22 @@ import { daysFromToday, fmtRp, initials, listOf, statusCustomerMeta } from '../l
 import { useUi } from '../context/UiContext'
 import NotificationBell from '../components/NotificationBell'
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications'
+import { canDeduct } from '../lib/marketingClaim'
+import { canCreditMemo } from '../lib/marketingClaim'
+import { canTransfer } from '../lib/marketingClaim'
+import { canGoods } from '../lib/marketingClaim'
+import { canRequisition } from '../lib/requisition'
+import { canMoveRequest } from '../lib/moveRequest'
+import { canIssueMaterial } from '../lib/issueMaterial'
 
 // Enam batang sesuai dokumen hal. 8 (tanpa Lead dan Distribution)
+// 4 tahap sesuai Section Flow Petty Cash.pdf / Figma Home — warna tile tetap (bukan statusCustomerMeta,
+// itu dipakai halaman lain dan warnanya beda dari yang di Figma Home).
 const PIPE_VIEW = [
-  ['PROSPEK', 'Prospect'],
-  ['BRAND_AWARENESS', 'Brand Aw.'],
-  ['SAMPLING', 'Sampling'],
-  ['QUOTATION', 'Quote'],
-  ['WIN', 'Win'],
-  ['LOSE', 'Lose'],
+  ['PROSPEK', 'Prospek', '#F1ECDF'],
+  ['BRAND_AWARENESS', 'Brand Awareness', '#EEF2FF'],
+  ['SAMPLING', 'Sample', '#FFF7E0'],
+  ['QUOTATION', 'Quotation', '#F3EAFB'],
 ]
 
 export default function Home() {
@@ -30,33 +37,29 @@ export default function Home() {
   const [data, setData] = useState(null)
   const [dot, setDot] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   useDraftSync()
   const bannerRef = useDragScroll()
-  const fyRef = useDragScroll()
   const { unread } = useUnreadNotifications(true)
 
-  useEffect(() => {
-    let alive = true
-      ; (async () => {
-        try {
-          const d = await getDashboard()
-          if (alive) setData(d)
-        } catch (e) {
-          if (alive) showToast(e.message || 'Gagal muat dashboard', { warn: true })
-        } finally {
-          if (alive) setLoading(false)
-        }
-      })()
-    return () => {
-      alive = false
+  const loadDashboard = useCallback(async () => {
+    setLoading(true)
+    try {
+      const d = await getDashboard()
+      setData(d)
+    } catch (e) {
+      showToast(e.message || 'Gagal muat dashboard', { warn: true })
+    } finally {
+      setLoading(false)
     }
   }, [showToast])
+
+  useEffect(() => { loadDashboard() }, [loadDashboard])
 
   const name = user?.name || data?.user?.name || 'Sales'
   const ar = data?.ar || data?.aging || {}
   const arTotal = ar.total ?? ar.outstanding ?? 0
   const overdueInv = ar.overdue_count ?? ar.overdue_invoices ?? ar.overdueInv ?? 0
-  const buckets = ar.buckets || [ar.CURRENT ?? ar.current ?? 0, ar['1-30'] ?? ar.d1_30 ?? 0, ar['31-60'] ?? ar.d31_60 ?? 0, ar['60+'] ?? ar.d60_plus ?? 0]
   const pipeline = listOf(data?.pipeline)
   const pipeCount = Object.fromEntries(
     pipeline.map((p) => [String(p.key).toUpperCase(), Number(p.count ?? p.value ?? 0)]),
@@ -70,10 +73,9 @@ export default function Home() {
   const ordering = canOrder(user)
   const delegationBadge = ordering ? delegations.incoming_pending : delegations.outgoing_pending
   const promos = listOf(data?.active_promos)
-  const visitsToday = data?.stats?.visits_today ?? 0
-  const activeTasks = activities.total ?? 0
   const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning,' : hour < 17 ? 'Good afternoon,' : 'Good evening,'
+  const greeting = hour < 12 ? 'Good Morning..' : hour < 17 ? 'Good Afternoon..' : 'Good Evening..'
+  const todayLong = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   const allItems = [
     { icon: 'plus', label: 'New Lead', to: '/leads/new' },
@@ -94,8 +96,24 @@ export default function Home() {
     { icon: 'users', label: 'Delegasi', to: '/delegations', badge: delegationBadge > 0 ? delegationBadge : undefined },
     { icon: 'chart', label: 'Laporan NOO', to: '/reports/noo' },
     ...(isManager(user) ? [{ icon: 'gear', label: 'Master Data', to: '/master' }] : []),
+    ...(isManager(user) ? [{ icon: 'card', label: 'Budget Marketing', to: '/marketing/budgets' }] : []),
+    ...(isManager(user) ? [{ icon: 'card', label: 'Event Marketing', to: '/marketing/events' }] : []),
+    ...(isManager(user) ? [{ icon: 'gift', label: 'Star Outlet', to: '/marketing/star-outlets' }] : []),
+    ...(isManager(user) ? [{ icon: 'gift', label: 'Program Klaim', to: '/marketing/claim-programs' }] : []),
+    ...(isManager(user) ? [{ icon: 'check', label: 'Persetujuan Marketing', to: '/marketing/approvals' }] : []),
+    ...(isManager(user) ? [{ icon: 'receipt', label: 'Pengajuan Klaim', to: '/marketing/claims' }] : []),
+    ...(canDeduct(user) ? [{ icon: 'doc', label: 'Potong Nota', to: '/marketing/deductions' }] : []),
+    ...(canCreditMemo(user) ? [{ icon: 'doc', label: 'Potong Tagihan', to: '/marketing/credit-memos' }] : []),
+    ...(canTransfer(user) ? [{ icon: 'doc', label: 'Pencairan Transfer', to: '/marketing/transfers' }] : []),
+    ...(canGoods(user) ? [{ icon: 'doc', label: 'Pencairan Barang', to: '/marketing/goods' }] : []),
+    ...(canRequisition(user) ? [{ icon: 'doc', label: 'Requisition', to: '/purchasing/requisitions' }] : []),
+    ...(canMoveRequest(user) ? [{ icon: 'doc', label: 'Move Inventory', to: '/marketing/move-requests' }] : []),
+    ...(canMoveRequest(user) ? [{ icon: 'doc', label: 'Sample Internal', to: '/marketing/sample-requests' }] : []),
+    ...(canIssueMaterial(user) ? [{ icon: 'doc', label: 'Issue Produk', to: '/marketing/issues' }] : []),
+    ...(isManager(user) ? [{ icon: 'chart', label: 'Sales Target & Achievement', to: '/marketing/achievement' }] : []),
     { icon: 'gift', label: 'Promo', to: '/promo', badge: badges.promos },
     { icon: 'chart', label: 'Outstanding Report', to: '/ar', badge: overdueInv || undefined },
+    { icon: 'wallet', label: 'Cash Advance', to: '/cash-advance' },
     { icon: 'card', label: 'Pembayaran', to: '/payment' },
     { icon: 'receipt', label: 'Expense', to: '/expenses', badge: badges.expenses },
     { icon: 'return', label: 'Retur', to: '/returns', badge: badges.returns },
@@ -128,44 +146,48 @@ export default function Home() {
 
   return (
     <Screen>
-      <div className="appbar">
-      <div className="abrow">
-          <button type="button" className="dots" aria-label="Menu" onClick={openAll}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" />
-            </svg>
-          </button>
-          <div
-            className="avatar"
-            onClick={async () => {
-              if (confirm('Keluar dari aplikasi?')) {
-                await logout()
-                nav('/login', { replace: true })
-              }
-            }}
-            role="button"
-            tabIndex={0}
-          >
-            {initials(name)}
-          </div>
-          <div className="greet-wrap">
-            <div className="greet">{greeting}</div>
-            <div className="gname">{name}</div>
-          </div>
-          <button
-            type="button"
-            className="bell"
-            aria-label="Notifications"
-            onClick={() => nav('/notifications')}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div className="home-page">
+      <div className="home-topbar">
+      <button type="button" className="dots" aria-label="Menu" onClick={() => setSidebarOpen((v) => !v)}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
+        <div className="ab-title">Home</div>
+        <div className="ab-actions">
+        <button type="button" className="ab-icon ab-icon-accent" aria-label="Notifications" onClick={() => nav('/notifications')}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8M10 21h4" />
             </svg>
             {unread > 0 || notif > 0 ? <span className="bdot" /> : null}
           </button>
+          <button type="button" className="ab-icon" aria-label="Bantuan" onClick={() => showToast('Bantuan segera hadir', { warn: true })}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><path d="M9.5 9a2.5 2.5 0 014.8 1c0 1.6-2.3 2-2.3 3.5M12 17h.01" />
+            </svg>
+          </button>
+          <button type="button" className="ab-icon" aria-label="Muat ulang" onClick={loadDashboard}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 0115-6.7M21 12a9 9 0 01-15 6.7" /><path d="M18 3v4h-4M6 21v-4h4" />
+            </svg>
+          </button>
         </div>
-        <div style={{ marginTop: 12 }}>
-          <GlobalSearch />
+      </div>
+
+      <div className="appbar home-appbar">
+        <div className="greet-block">
+          <div className="greet">{greeting}</div>
+          <div className="greet-date">{todayLong}</div>
+        </div>
+
+        <div className="sales-card">
+          <img src="/mazzoni-logo.png" alt="Mazzoni" className="sales-card-logo" />
+          <div className="sales-card-info">
+            <div className="sales-card-name">{name}</div>
+            <div className="sales-card-role">
+              {[user?.sales_type ? `Sales ${user.sales_type}` : null, user?.territory].filter(Boolean).join(' - ') || '—'}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -201,37 +223,6 @@ export default function Home() {
         </>
       )}
 
-      <div className="cap">For You Today</div>
-      <div className="fyt" ref={fyRef}>
-        <div className="fy" onClick={() => nav('/activities')} role="button" tabIndex={0}>
-          <span className="fy-ic" style={{ background: 'var(--green-soft)', color: 'var(--green)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12l5 5L20 7" />
-            </svg>
-          </span>
-          <div className="fy-n">{activeTasks}</div>
-          <div className="fy-l">Active tasks</div>
-        </div>
-        <div className="fy" onClick={() => nav('/visits')} role="button" tabIndex={0}>
-          <span className="fy-ic" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z" /><circle cx="12" cy="10" r="2.5" />
-            </svg>
-          </span>
-          <div className="fy-n">{visitsToday}</div>
-          <div className="fy-l">Visits logged</div>
-        </div>
-        <div className="fy" onClick={() => nav('/customers')} role="button" tabIndex={0}>
-        <span className="fy-ic" style={{ background: 'var(--amber-soft)', color: 'var(--amber)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" />
-            </svg>
-          </span>
-          <div className="fy-n">—</div>
-          <div className="fy-l">Upsell potential</div>
-        </div>
-      </div>
-
       <div className="arcard" onClick={() => nav('/ar')} role="button" tabIndex={0}>
         <div className="ar-body">
           <div className="ar-cap">Outstanding AR</div>
@@ -251,7 +242,7 @@ export default function Home() {
 
       <div className="pipecard">
         <div className="pipe-head">
-          <span className="cap-in">Pipeline Canvassing</span>
+        <span className="cap-in">Pipeline Journey</span>
           <span className="pipe-link" onClick={() => nav('/customers')} role="button" tabIndex={0}>
             Detail →
           </span>
@@ -260,40 +251,28 @@ export default function Home() {
           <div className="loading-center">Memuat…</div>
         ) : (
           <div className="bars">
-            {PIPE_VIEW.map(([key, label]) => {
-              const n = pipeCount[key] ?? 0
-              const h = n === 0 ? 4 : Math.min(64, Math.max(10, n * 6.4))
-              return (
-                <div className="col" key={key}>
-                  <div className="n">{n}</div>
-                  <div className="bar" style={{ height: h, background: statusCustomerMeta(key).color }} />
-                  <div className="cn">{label}</div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-        <div className="pipe-note">
-          "Detail" opens the Customer List, grouped by the same stage — same place the "Customers" tile below goes.
+          {PIPE_VIEW.map(([key, label, color]) => (
+            <div className="col" key={key}>
+              <div className="pipe-tile" style={{ background: color }}>
+                <span className="n">{pipeCount[key] ?? 0}</span>
+              </div>
+              <div className="cn">{label}</div>
+            </div>
+          ))}
         </div>
+        )}
       </div>
 
       <div className="cap">Quick Actions</div>
-      <div className="qa-card">
-        <div className="qa-grid">
-          <QaTile icon="plus" label="New Lead" onClick={() => nav('/leads/new')} />
-          <QaTile icon="home" label="Customers" onClick={() => nav('/customers')} badge={data?.stats?.customers || undefined} />
-          <QaTile icon="pin" label="Sales Visit" onClick={() => nav('/visits')} />
-        </div>
-      </div>
-      <div className="qa-note">
-        "New Lead" opens the Lead Registration form · "Customers" opens the same Customer List as "Detail" above — tap a card there for Customer Detail (Info / Activity tabs).
+      <div className="qa-stack">
+        <button type="button" className="qa-btn-primary" onClick={() => nav('/leads/new')}>New Lead</button>
+        <button type="button" className="qa-btn-outline" onClick={() => nav('/visits')}>Sales Visit</button>
       </div>
 
       <div className="cap cap-row">
-      <span>Top 10 Outstanding</span>
+        <span>TOP 10 Outstanding</span>
         <span className="pipe-link" onClick={() => nav('/ar')} role="button" tabIndex={0}>
-          Lihat laporan →
+          Laporan →
         </span>
       </div>
       <Card style={{ padding: '8px 10px' }}>
@@ -307,9 +286,8 @@ export default function Home() {
               key={c.id}
               barColor={c.days_overdue > 60 ? 'var(--pink)' : c.days_overdue > 0 ? 'var(--amber)' : 'var(--green)'}
               title={c.name || '—'}
-              subtitle={`${c.customer_code || ''}${c.customer_code ? ' · ' : ''}${
-                c.days_overdue > 0 ? `aging ${c.days_overdue} hari` : 'belum jatuh tempo'
-              }`}
+              subtitle={`${c.customer_code || ''}${c.customer_code ? ' · ' : ''}${c.days_overdue > 0 ? `aging ${c.days_overdue} hari` : 'belum jatuh tempo'
+                }`}
               right={fmtRp(c.balance)}
               onClick={() => nav(`/customers/${c.id}`)}
             />
@@ -317,9 +295,26 @@ export default function Home() {
         )}
       </Card>
 
-      <div className="cap">Ringkasan Aging</div>
-      <AgingBuckets buckets={buckets} />
       <div style={{ height: 12 }} />
+      </div>
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        badges={{
+          canvassing: badges.leads || badges.canvassing,
+          activities: activities.late > 0 ? activities.late : activities.total || undefined,
+          returns: badges.returns,
+          tracking: badges.orders,
+          promo: badges.promos,
+          arInvoice: overdueInv || undefined,
+        }}
+        canOrder={ordering}
+        onLogout={async () => {
+          if (!confirm('Keluar dari aplikasi?')) return
+          await logout()
+          nav('/login', { replace: true })
+        }}
+      />
     </Screen>
   )
 }
@@ -341,11 +336,13 @@ const QA_ICONS = {
   card: (<><rect x="3" y="6" width="18" height="13" rx="2.5" /><path d="M3 10h18M7 15h4" /></>),
   receipt: (<><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></>),
   return: (<><path d="M9 14L4 9l5-5" /><path d="M4 9h10a6 6 0 010 12h-3" /></>),
+  wallet: (<><path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v2H3z" /><path d="M3 9h16a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><circle cx="16.5" cy="14" r="1.2" /></>),
 }
 
 const QA_TONE = {
   plus: 'red', pin: 'blue', check: 'green', doc: 'violet', cart: 'amber', truck: 'orange', home: 'red', box: 'slate',
   more: 'slate', users: 'blue', chart: 'blue', gear: 'slate', gift: 'orange', card: 'green', receipt: 'amber', return: 'blue',
+  wallet: 'orange',
 }
 
 function QaTile({ icon, label, onClick, badge, badgeClass = '' }) {

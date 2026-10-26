@@ -1,0 +1,66 @@
+/* Budget Marketing (Blueprint MJU 3.2.1) — marketingbudget.css
+   Memakai variabel warna yang sudah ada di aplikasi; nilai cadangan hanya untuk jaga-jaga. */
+
+/* ---------- Ringkasan (hero) ---------- */
+.mb-hero{ position:relative; overflow:hidden; margin-bottom:14px; padding:16px; border-radius:18px;
+  background:var(--primary, #C8102E); color:#FFFFFF; }
+.mb-hero::after{ content:""; position:absolute; right:-34px; top:-34px; width:120px; height:120px;
+  border-radius:50%; background:rgba(255,255,255,.12); pointer-events:none; }
+.mb-hero-cap{ font-size:11.5px; font-weight:700; opacity:.85; }
+.mb-hero-total{ margin-top:4px; font-size:28px; font-weight:800; line-height:1.15; }
+.mb-hero .mb-bar{ margin-top:12px; background:rgba(255,255,255,.28); }
+.mb-hero .mb-bar i{ background:#FFFFFF; }
+.mb-hero-sub{ margin-top:6px; font-size:11.5px; opacity:.9; }
+.mb-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+.mb-stats > div{ padding:9px 10px; border-radius:12px; background:rgba(255,255,255,.16); min-width:0; }
+.mb-stats span{ display:block; font-size:10.5px; opacity:.85; }
+.mb-stats b{ display:block; margin-top:2px; font-size:12.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* ---------- Bar progres ---------- */
+.mb-bar{ height:8px; border-radius:6px; background:var(--stroke, #E6E0D2); overflow:hidden; }
+.mb-bar i{ display:block; height:100%; border-radius:6px; background:var(--green, #1B7F46); transition:width .25s; }
+.mb-bar i.warn{ background:var(--amber, #E3A008); }
+.mb-bar i.full{ background:var(--pink, #D64550); }
+
+/* ---------- Kartu Campaign ---------- */
+.mb-add{ margin:0 0 12px; }
+.mb-card{ margin-bottom:10px; padding:14px; background:#FFFFFF; border:1px solid var(--stroke, #E6E0D2);
+  border-radius:16px; cursor:pointer; }
+.mb-card:active{ transform:scale(.99); }
+.mb-card.off{ opacity:.72; }
+.mb-top{ display:flex; align-items:center; gap:12px; }
+.mb-av{ flex:none; width:42px; height:42px; border-radius:13px; display:grid; place-items:center;
+  background:var(--primary-soft, #FDE8EC); color:var(--primary, #C8102E); font-size:13px; font-weight:800; }
+.mb-main{ flex:1; min-width:0; }
+.mb-name{ font-size:14.5px; font-weight:800; color:var(--text, #17202B); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mb-meta{ margin-top:2px; font-size:12px; color:var(--faint, #7A8494); }
+.mb-badge{ flex:none; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:800; }
+.mb-badge.on{ background:var(--green-soft, #E3F4EA); color:var(--green, #1B7F46); }
+.mb-badge.off{ background:var(--stroke, #E6E0D2); color:var(--faint, #7A8494); }
+.mb-amount{ display:flex; align-items:baseline; gap:6px; margin:12px 0 8px; }
+.mb-amount b{ font-size:19px; font-weight:800; color:var(--text, #17202B); }
+.mb-amount span{ font-size:11.5px; color:var(--faint, #7A8494); }
+.mb-foot{ display:flex; justify-content:space-between; gap:8px; margin-top:8px; font-size:11.5px; color:var(--faint, #7A8494); }
+.mb-foot b{ color:var(--text, #17202B); }
+
+/* ---------- Kosong ---------- */
+.mb-empty{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:28px 16px; text-align:center;
+  background:#FFFFFF; border:1px dashed var(--stroke, #E6E0D2); border-radius:16px; }
+.mb-empty-ic{ display:grid; place-items:center; width:52px; height:52px; border-radius:16px;
+  background:var(--primary-soft, #FDE8EC); color:var(--primary, #C8102E); }
+.mb-empty p{ margin:0; font-size:13px; font-weight:700; color:var(--text, #17202B); }
+.mb-empty small{ font-size:11.5px; color:var(--faint, #7A8494); }
+
+/* ---------- Form ---------- */
+.mb-sec{ margin-bottom:12px; padding:14px; background:#FFFFFF; border:1px solid var(--stroke, #E6E0D2); border-radius:16px; }
+.mb-sec-t{ margin-bottom:10px; font-size:12px; font-weight:800; letter-spacing:.2px; color:var(--faint, #7A8494); text-transform:uppercase; }
+.mb-sec .field:last-child{ margin-bottom:0; }
+.mb-money{ font-size:20px !important; font-weight:800 !important; }
+.mb-preview{ margin-top:6px; font-size:12px; color:var(--faint, #7A8494); }
+.mb-preview b{ color:var(--text, #17202B); }
+.mb-kv{ display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-size:12.5px; color:var(--faint, #7A8494); }
+.mb-kv b{ color:var(--text, #17202B); font-size:13px; }
+.mb-seg{ display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:4px; border-radius:14px; background:var(--stroke, #E6E0D2); }
+.mb-seg button{ border:none; border-radius:11px; padding:10px; font:inherit; font-size:12.5px; font-weight:800;
+  background:transparent; color:var(--faint, #7A8494); cursor:pointer; }
+.mb-seg button.on{ background:#FFFFFF; color:var(--text, #17202B); box-shadow:0 1px 3px rgba(0,0,0,.12); }

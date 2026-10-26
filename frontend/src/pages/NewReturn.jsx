@@ -1,3 +1,4 @@
+//frontend/src/pages/NewReturn.jsx
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createReturn, getCustomers, getProducts } from '../api'
@@ -5,6 +6,7 @@ import { PhotoUpload } from '../components/PhotoUpload'
 import { Screen, TopBar } from '../components/ui'
 import { useUi } from '../context/UiContext'
 import { listOf, listProducts } from '../lib/format'
+import { buildReturnFormData } from '../lib/returnForm'
 import { uuid } from '../lib/uuid'
 import { saveDraft, loadDraft, clearDraft } from '../lib/drafts'
 import { offlineSaveMessage } from '../lib/draftSync'
@@ -54,10 +56,13 @@ export default function NewReturn() {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
   const submit = async () => {
-    if (!photos.length) {
-      showToast('Lampirkan foto kondisi barang', { warn: true })
-      return
-    }
+    const warn = (m) => showToast(m, { warn: true })
+    if (!form.customer_id) return warn('Pilih customer')
+    const product = products.find((p) => String(p.id) === String(form.product_id))
+    if (!product) return warn('Pilih produk')
+    if (!(Number(form.qty) > 0)) return warn('Isi qty lebih dari 0')
+    if (!photos.length) return warn('Lampirkan foto kondisi barang')
+
     const payload = { ...form, client_uuid: uuid() }
     if (!online) {
       saveDraft('return', { form: payload })
@@ -66,12 +71,8 @@ export default function NewReturn() {
     }
     setBusy(true)
     try {
-      const fd = new FormData()
-      Object.entries(payload).forEach(([k, v]) => {
-        if (v != null && v !== '') fd.append(k, v)
-      })
-      photos.forEach((f) => fd.append('photos[]', f))
-      await createReturn(fd)
+      // server membaca lines[0][product_id], lines[0][qty], dan attachments[]
+      await createReturn(buildReturnFormData(payload, product.product_id || product.id, photos))
       clearDraft('return')
       showToast('Permintaan retur dikirim')
       nav('/returns')

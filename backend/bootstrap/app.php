@@ -1,5 +1,5 @@
 <?php
-//backend/config/sanctum.php
+//backend/bootstrap/app.php
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;

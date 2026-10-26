@@ -43,6 +43,7 @@ export default function NewOrder() {
 
   // State khusus untuk input NPD (free-text)
   const [isNpd, setIsNpd] = useState(false)
+  const [isFreeProduct, setIsFreeProduct] = useState(false)
   const [npdName, setNpdName] = useState('')
   const [npdUom, setNpdUom] = useState('PCS')
   const [npdPrice, setNpdPrice] = useState('')
@@ -147,19 +148,30 @@ export default function NewOrder() {
       return
     }
 
+    if (isFreeProduct) {
+      const hasPaidSibling = lines.some(
+        (l) => !l.is_custom && String(l.product_id) === String(p.product_id || p.id) && !l.is_free_product,
+      )
+      if (!hasPaidSibling) {
+        showToast('Tambahkan dulu baris berbayar untuk produk ini sebelum menandai Free Product', { warn: true })
+        return
+      }
+    }
     setLines((prev) => [
       ...prev,
       {
         is_custom: false,
+        is_free_product: isFreeProduct,
         product_id: p.product_id || p.id,
         part_num: p.part_num || p.sku,
         description: p.description || p.name,
         qty: q,
         uom: p.uom || 'PCS',
         unit_price: price,
-        line_total: q * price,
+        line_total: isFreeProduct ? 0 : q * price,
       },
     ])
+    setIsFreeProduct(false)
   }
 
   const subtotal = useMemo(() => lines.reduce((s, l) => s + l.line_total, 0), [lines])
@@ -192,6 +204,7 @@ export default function NewOrder() {
         product_id: l.is_custom ? null : l.product_id,
         is_custom: !!l.is_custom,
         custom_part_name: l.is_custom ? l.custom_part_name : null,
+        is_free_product: !!l.is_free_product,
         // Baris Kg: pcs dihitung ulang oleh server dari Kg dan gramasi
         ...(l.qty_kg
           ? { qty_kg: l.qty_kg, gramasi_gr: l.gramasi_gr, packaging_id: l.packaging_id }
@@ -318,7 +331,7 @@ export default function NewOrder() {
           </div>
         )}
 
-        {!isNpd && (
+{!isNpd && (
           <div className="chips">
             <button type="button" className={`chip${unitMode === 'qty' ? ' on' : ''}`} onClick={() => setUnitMode('qty')}>
               Qty biasa
@@ -327,6 +340,12 @@ export default function NewOrder() {
               Berdasarkan Kg
             </button>
           </div>
+        )}
+        {!isNpd && !kgMode && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, margin: '0 0 10px' }}>
+            <input type="checkbox" checked={isFreeProduct} onChange={(e) => setIsFreeProduct(e.target.checked)} />
+            Tandai sebagai Free Product (Qty gratis untuk Part yang sudah punya baris berbayar)
+          </label>
         )}
         {kgMode && (
           <Field label="Kemasan (gramasi per pcs)">
@@ -364,6 +383,7 @@ export default function NewOrder() {
               <div className="n">
                 {l.description}
                 {l.is_custom && <span className="badge" style={{ marginLeft: 6 }}>NPD</span>}
+                {l.is_free_product && <span className="badge" style={{ marginLeft: 6 }}>FREE</span>}
               </div>
               <div className="d">
                 {l.qty_kg
@@ -397,6 +417,11 @@ export default function NewOrder() {
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, marginTop: 8 }}>
             <span>Total</span>
             <span style={{ color: 'var(--text)' }}>{fmtRp(total)}</span>
+            {promoId ? (
+            <div className="muted" style={{ fontSize: 11.5, marginTop: 8 }}>
+              Diskon promo di atas adalah perkiraan. Diskon final dihitung Epicor saat order diproses.
+            </div>
+          ) : null}
           </div>
         </div>
         <button className="btn" type="submit" disabled={saving}>

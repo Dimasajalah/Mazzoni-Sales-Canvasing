@@ -1,5 +1,4 @@
 <?php
-// backend/app/Models/SalesOrderLine.php
 
 namespace App\Models;
 
@@ -12,6 +11,7 @@ class SalesOrderLine extends Model
         'order_id', 'product_id', 'is_custom', 'custom_part_name',
         'qty', 'qty_kg', 'gramasi_gr', 'qty_pcs', 'packaging_id',
         'uom', 'unit_price', 'discount', 'line_total',
+        'is_free_product', 'misc_charge_code', 'misc_charge_amount',
     ];
 
     protected function casts(): array
@@ -24,6 +24,8 @@ class SalesOrderLine extends Model
             'unit_price' => 'decimal:2',
             'discount' => 'decimal:2',
             'line_total' => 'decimal:2',
+            'is_free_product' => 'boolean',
+            'misc_charge_amount' => 'decimal:2',
         ];
     }
 

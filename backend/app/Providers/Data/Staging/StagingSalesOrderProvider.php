@@ -94,7 +94,19 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
 
                 $product = Product::findOrFail($line['product_id']);
                 $unitPrice = isset($line['unit_price']) ? (float) $line['unit_price'] : (float) $product->price;
-                $lineTotal = max(0, ($qty * $unitPrice) - $discount);
+                $isFreeProduct = (bool) ($line['is_free_product'] ?? false);
+                $miscChargeAmount = null;
+                $miscChargeCode = null;
+
+                if ($isFreeProduct) {
+                    // Blueprint MJU 5.2.8 (SL08): Misc Charge FREEPROD negatif = Qty x Unit Price,
+                    // sehingga nilai baris menjadi nol pada tagihan.
+                    $miscChargeAmount = - ($qty * $unitPrice);
+                    $miscChargeCode = 'FREEPROD';
+                    $lineTotal = 0.0;
+                } else {
+                    $lineTotal = max(0, ($qty * $unitPrice) - $discount);
+                }
                 $subtotal += $lineTotal;
 
                 $normalized[] = [
@@ -106,6 +118,9 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
                     'uom' => $line['uom'] ?? $product->uom,
                     'unit_price' => $unitPrice,
                     'discount' => $discount,
+                    'is_free_product' => $isFreeProduct,
+                    'misc_charge_code' => $miscChargeCode,
+                    'misc_charge_amount' => $miscChargeAmount,
                     'line_total' => $lineTotal,
                 ];
             }
@@ -127,7 +142,7 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
                 'status' => $status,
                 'sync_status' => $header['sync_status'] ?? 'NOT_REQUIRED',
                 'notes' => $customerOnHold
-                    ? trim(($header['notes'] ?? '')."\n[SYSTEM] Order otomatis di-hold: customer dalam status Credit Hold.")
+                    ? trim(($header['notes'] ?? '') . "\n[SYSTEM] Order otomatis di-hold: customer dalam status Credit Hold.")
                     : ($header['notes'] ?? null),
             ]);
 
@@ -144,7 +159,7 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
                 $actor = auth()->user() ?? \App\Models\User::find($order->salesperson_id);
                 if ($lead && $actor) {
                     app(\App\Services\LeadTaskService::class)
-                        ->markWon($lead, $actor, 'Order '.$order->order_number.' dibuat dari prospek');
+                        ->markWon($lead, $actor, 'Order ' . $order->order_number . ' dibuat dari prospek');
                     app(\App\Services\DelegationService::class)->markOrdered($lead->id, $order);
                 }
             }
@@ -196,7 +211,7 @@ class StagingSalesOrderProvider implements SalesOrderProviderInterface
                 ['step' => 'ORDER', 'status' => $order->status, 'at' => $order->order_date],
                 ['step' => 'SHIPMENT', 'status' => $order->shipments->first()?->status, 'at' => $order->shipments->first()?->ship_date],
                 ['step' => 'INVOICE', 'status' => $order->invoices->first()?->status, 'at' => $order->invoices->first()?->invoice_date],
-                ['step' => 'PAYMENT', 'status' => $order->invoices->first()?->balance <= 0 ? 'PAID' : 'OPEN', 'at' => null],
+                ['step' => 'PAYMENT', 'status' => $order->invoices->first() ? ($order->invoices->first()->balance <= 0 ? 'PAID' : 'OPEN') : null, 'at' => null],
             ],
         ];
     }

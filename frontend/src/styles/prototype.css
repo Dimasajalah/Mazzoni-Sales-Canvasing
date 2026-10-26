@@ -615,3 +615,52 @@ a { color: inherit; text-decoration: none; }
 .tc-hint{ margin:6px 2px 0; font-size:11px; line-height:1.45; color:var(--faint); }
 .tc-comment textarea{ min-height:110px; }
 .th input[readonly], .tc input[readonly]{ background:var(--readonly); cursor:default; }
+
+.login-dimmed{ filter:brightness(.55); pointer-events:none; }
+
+.login-overlay-card{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:70;
+  width:240px; padding:28px 20px; border-radius:20px; background:#FFFFFF; box-shadow:0 10px 30px rgba(0,0,0,.25);
+  display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
+.login-overlay-icon{ display:grid; place-items:center; width:56px; height:56px; border-radius:50%; border:2.5px solid #2563EB; color:#2563EB; margin-bottom:4px; }
+.login-overlay-icon.ok{ border-color:#1F8A4C; color:#1F8A4C; }
+.login-overlay-card strong{ font-size:15px; }
+.login-overlay-card span:last-child{ font-size:12.5px; color:var(--mut); }
+
+.login-foot p{ margin:0; }
+.login-foot .login-credit{ margin-top:18px; line-height:1.5; }
+
+.ab-title{ font-size:14px; font-weight:700; color:var(--text); flex:1; text-align:center; }
+.ab-actions{ display:flex; align-items:center; gap:14px; }
+.ab-icon{ position:relative; display:grid; place-items:center; width:18px; height:18px; border:0; background:transparent; color:#16222B; padding:0; }
+.ab-icon .bdot{ position:absolute; top:-2px; right:-3px; width:7px; height:7px; border-radius:50%; background:#E2672A; border:1.5px solid #FFFFFF; }
+
+.greet-block{ margin-top:2px; text-align:center; }
+.greet-block .greet{ font-size:18px; font-weight:800; color:var(--text); }
+.greet-block .greet-date{ font-size:12.5px; color:var(--mut); margin-top:2px; }
+
+.sales-card{ display:flex; align-items:center; gap:12px; margin-top:12px; padding:12px 14px; border:1px solid #ECE5D8; border-radius:16px; background:#FFFFFF; }
+.sales-card-logo{ width:40px; height:40px; object-fit:contain; }
+.sales-card-info{ flex:1; text-align:right; }
+.sales-card-name{ font-size:14.5px; font-weight:800; }
+.sales-card-role{ font-size:12px; color:var(--mut); }
+
+.qa-stack{ display:flex; flex-direction:column; gap:10px; padding:0 16px; }
+.qa-btn-primary{ padding:14px; border:0; border-radius:14px; background:#EA580C; color:#FFFFFF; font:inherit; font-weight:800; font-size:14.5px; }
+.qa-btn-outline{ padding:14px; border:1.5px solid #1F2937; border-radius:14px; background:#FFFFFF; color:#1F2937; font:inherit; font-weight:800; font-size:14.5px; }
+
+.home-page .cap, .home-page .cap-in, .home-page .ar-cap{ text-transform:none; }
+
+.pipecard .bars{ height:auto; align-items:flex-start; }
+.pipecard .bars .col{ gap:8px; }
+.pipecard .bars .pipe-tile{ width:100%; aspect-ratio:70/77; max-width:72px; border-radius:14px; display:grid; place-items:center; }
+.pipecard .bars .pipe-tile .n{ font-size:19px; font-weight:800; color:var(--text); }
+
+.ab-icon-accent{ color:#A81A2E; }
+.sales-card-logo{ width:52px; height:30px; }
+.greet-block .greet{ font-size:15px; }
+.greet-block .greet-date{ font-size:10.5px; }
+.home-topbar{ display:flex; align-items:center; gap:10px; padding:10px 16px 8px; background:#FFFFFF;
+  border-bottom:1px solid rgba(0,0,0,.18); box-shadow:0 2px 2px rgba(0,0,0,.08); position:relative; z-index:3;
+  margin-top:0; }
+  .home-topbar .dots{ width:42px; height:34px; border-radius:9px; }
+.home-appbar{ padding-top:6px; margin-top:0; }

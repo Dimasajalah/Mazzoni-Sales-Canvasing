@@ -1,5 +1,5 @@
 <?php
-
+//backend/config/cash_advance.php
 return [
     // 'staging' = data contoh bawaan; 'epicor' = BAQ di Epicor (MZN_CashAdvanceIssued).
     'source' => env('CASH_ADVANCE_SOURCE', env('DATA_SOURCE', 'staging')),
@@ -39,5 +39,12 @@ return [
         'amount' => ['PCashDoc_CashAmt', 'PCashDoc_DocCashAmt', 'CashAmt', 'DocCashAmt', 'Amount'],
         'currency' => ['PCashDoc_CurrencyCode', 'CurrencyCode', 'Currency'],
         'recipient' => ['DeskTo_MobileAppUserID_c', 'PCashDesk_MobileAppUserID_c', 'MobileAppUserID_c', 'RecipientRef'],
+    ],
+
+    // Dashboard Cash Advance (FDD Sales Mobile - Cash Advance v1.0, 26 Okt 2026) — menyusul setelah BAQ dikonfirmasi.
+    'dashboard_baq' => [
+        'summary' => env('CASH_ADVANCE_SUMMARY_BAQ', 'BMT_PettyCash_Summary'),
+        'category' => env('CASH_ADVANCE_CATEGORY_BAQ', 'BMT_PettyCash_Category'),
+        'docs' => env('CASH_ADVANCE_DOCS_BAQ', 'BMT_PettyCash_Docs'),
     ],
 ];

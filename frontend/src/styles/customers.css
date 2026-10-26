@@ -1,4 +1,5 @@
-/* ===== 03 Customers: Pipeline List (dokumen hal. 14) ===== */
+/* ===== 03 Customers: Pipeline List (dokumen hal. 14) ===== 
+Customers.css*/
 .cu-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
 .cu-stat{ background:#FFFFFF; border:1px solid var(--stroke); border-radius:14px; padding:12px; }
 .cu-stat b{ display:block; font-size:22px; font-weight:800; line-height:1.1; color:var(--text); }
